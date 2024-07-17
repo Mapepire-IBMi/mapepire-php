@@ -10,5 +10,7 @@
 namespace Mapepire;
 
 class Client {
+
+    protected ?string $user = null;   
     
 }
