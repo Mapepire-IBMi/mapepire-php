@@ -9,8 +9,13 @@
 
 namespace Mapepire;
 
-class Client {
+class Client
+{
 
-    protected ?string $user = null;   
-    
+    protected ?string $user = null;
+
+    public function __tostring()
+    {
+        return "Client";
+    }
 }
