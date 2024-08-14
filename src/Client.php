@@ -9,13 +9,13 @@
 
 namespace Mapepire;
 
-class Client
+class Client implements \Stringable
 {
 
     protected ?string $user = null;
 
-    public function __tostring()
+    public function __tostring(): string
     {
-        return "Client";
+        return "\Mapepire\Client";
     }
 }
