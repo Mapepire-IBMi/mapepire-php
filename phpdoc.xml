@@ -9,7 +9,7 @@
         <output>doc/api</output>
         <cache>build/cache</cache>
     </paths>
-    <version number="3.0.0">
+    <version number="3.4.3">
         <api>
             <source dsn=".">
                 <path>src</path>
