@@ -1,6 +1,6 @@
 {
-    "name": "softwoehr/mapepire-php",
-    "description": "PHP client for Mapepire-IBMi",
+    "name": "ibm/mapepire-php",
+    "description": "Client SDK for the IBM i Mapepire server",
     "license": "Apache-2.0",
     "authors": [
         {
