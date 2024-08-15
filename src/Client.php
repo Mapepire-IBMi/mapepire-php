@@ -130,7 +130,7 @@ class Client implements \Stringable
     public function connect(): WebsocketConnection
     {
         $creds = $this->encodeCredentials();
-        $handshake = (new WebsocketHandshake($this->genURI()))->withHeader("Authorization:Basic ", $creds);
+        $handshake = (new WebsocketHandshake($this->genURI()))->withHeader("Authorization: Basic", $creds);
         $this->connection = \Amp\Websocket\Client\connect($handshake);
         return $this->connection;
     }
