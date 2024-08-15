@@ -8,7 +8,12 @@
  */
 
 namespace Mapepire;
+
 require_once 'vendor/autoload.php';
+
+use \Amp\Websocket\Client\WebsocketHandshake;
+use \Amp\Websocket\Client\WebsocketConnection;
+
 /**
  * Client to Mapepire Server
  * @see https://mapepire-ibmi.github.io/
@@ -44,6 +49,12 @@ class Client implements \Stringable
     protected ?object $dotenv = null;
 
     /**
+     * The connection object
+     * @var ?WebsocketConnection
+     */
+    protected ?WebsocketConnection $connection = null;
+
+    /**
      * ctor takes server port user password
      * @param string $server mapepire server dns or ipaddr
      * @param int $port mapepire server port
@@ -68,6 +79,7 @@ class Client implements \Stringable
             . "Server: $this->server" . PHP_EOL
             . "Port: $this->port" . PHP_EOL
             . "User: $this->user" . PHP_EOL
+            . "Connection: $this->connection" . PHP_EOL
         ;
         return $result;
     }
@@ -108,5 +120,35 @@ class Client implements \Stringable
         $dotenv = \Dotenv\Dotenv::createImmutable($dir);
         $dotenv->safeLoad();
         return $dotenv;
+    }
+
+    /**
+     * Connect the websocket
+     * WON'T WORK YET until we factory the authorized connection
+     * @return \Amp\Websocket\Client\WebsocketConnection
+     */
+    public function connect(): WebsocketConnection
+    {
+        $creds = $this->encodeCredentials();
+        $handshake = (new WebsocketHandshake($this->genURI()))->withHeader("Authorization:Basic ", $creds);
+        $this->connection = \Amp\Websocket\Client\connect($handshake);
+        return $this->connection;
+    }
+
+    /**
+     * Formulate the URI for the connection
+     * @return string the uri
+     */
+    private function genURI(): string
+    {
+        $uri = "wss://$this->server:" . (string) $this->port . "/db/";
+        return $uri;
+    }
+
+    private function encodeCredentials(): string
+    {
+        $credentials = base64_encode("$this->user:$this->password");
+        return $credentials;
+
     }
 }

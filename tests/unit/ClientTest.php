@@ -17,6 +17,7 @@ class ClientTest extends TestCase
 Server: localhost
 Port: 8076
 User: X
+Connection: 
 "
         );
         print $this->client;
