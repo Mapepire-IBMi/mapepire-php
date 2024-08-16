@@ -1,7 +1,5 @@
 /.phpdoc/
 /doc/
 /build
-/nbproject
 /vendor
 /.phpunit.result.cache
-/.vscode/settings.json
