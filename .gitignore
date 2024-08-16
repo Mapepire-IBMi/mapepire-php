@@ -1,8 +1,7 @@
 /.phpdoc/
 /doc/
 /build
-/nbproject/private/
+/nbproject
 /vendor
-/composer.lock
 /.phpunit.result.cache
 /.vscode/settings.json
