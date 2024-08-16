@@ -1,6 +1,7 @@
 {
     "name": "ibmi/mapepire-php",
-    "description": "Client SDK for the IBM i Mapepire server",
+    "description": "mapepire-php provides an API for communicating with Db2 for IBM i through a Mapepire server",
+    "type": "library",
     "license": "Apache-2.0",
     "authors": [
         {
@@ -13,8 +14,11 @@
         }
     ],
     "autoload": {
-	"psr-4" : {"Mapepire\\": "src/"}
+	    "psr-4" : {
+            "Mapepire\\": "src/"
+        }
     },
+    "keywords": ["ibmi", "db2", "database"],
     "require": {
         "php": ">=8.1",
         "amphp/websocket-client": "^2.0",
