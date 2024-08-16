@@ -6,6 +6,10 @@
         {
             "name": "Jack Woehr",
             "email": "jwoehr@softwoehr.com"
+        },
+        {
+            "name": "Yeshua Hall",
+            "email": "yeshua@sobo.red"
         }
     ],
     "autoload": {
