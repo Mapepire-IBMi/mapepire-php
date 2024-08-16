@@ -1,2 +1,7 @@
 # mapepire-php
-Mapepire client SDK for PHP
+
+`mapepire-php` is a PHP client for the [Mapepire](https://github.com/Mapepire-IBMi) performant, cloud-friendly database access layer for Db2 on IBM i.
+
+**WIP - Work in Progress -- Not ready!**
+
+We'll let you know when it's working :)

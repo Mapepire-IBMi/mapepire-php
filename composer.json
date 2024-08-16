@@ -1,4 +1,22 @@
 {
- "name": "ibmi/mapepire",
- "description": "Client SDK for the IBM i Mapepire server"
+    "name": "ibmi/mapepire-php",
+    "description": "Client SDK for the IBM i Mapepire server",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Jack Woehr",
+            "email": "jwoehr@softwoehr.com"
+        }
+    ],
+    "autoload": {
+	"psr-4" : {"Mapepire\\": "src/"}
+    },
+    "require": {
+        "php": ">=8.1",
+        "amphp/websocket-client": "^2.0",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    }
 }
