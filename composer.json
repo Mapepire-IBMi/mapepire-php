@@ -1,6 +1,6 @@
 {
     "name": "ibmi/mapepire-php",
-    "description": "mapepire-php provides an API for communicating with Db2 for IBM i through a Mapepire server",
+    "description": "mapepire-php is a PHP client for the Mapepire database access layer for Db2 on IBM i.",
     "type": "library",
     "license": "Apache-2.0",
     "authors": [
