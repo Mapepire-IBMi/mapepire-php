@@ -26,5 +26,9 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^10.5"
+    },
+    "scripts": {
+        "test": "phpunit --colors=always",
+        "list-test-suites": "phpunit --list-suites"
     }
 }
