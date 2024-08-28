@@ -24,7 +24,6 @@ class SqlJob
     {
         echo "Connecting...\n";
         $encodedAuth = base64_encode("{$db2Server->getUsername()}:{$db2Server->getPassword()}");
-        $encodedAuth = 'bWFwZXBpcmU6YnVzaG1hc3RlcjMwMDA';
         echo "encodedAuth: {$encodedAuth}\n";
 
 //        $connector = new \React\Socket\SecureConnector(new \React\Socket\Connector());
