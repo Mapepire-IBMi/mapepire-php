@@ -65,6 +65,7 @@ class Client implements \Stringable
         $this->user = $user;
         $this->password = $password;
         $this->websocket_client = new \WebSocket\Client(uri: $this->genURI());
+        $this->websocket_client->addHeader(name: "Authorization", content: "Basic " . $this->encodeCredentials());
     }
 
     /**
@@ -120,18 +121,19 @@ class Client implements \Stringable
         return $dotenv;
     }
 
-    /**
-     * Connect the websocket
-     * WON'T WORK YET until we factory the authorized connection
-     * @return \Websocket\Client
-     */
-    // public function connect(): \Websocket\Client
-    // {
-    //     $creds = $this->encodeCredentials();
-    //     $handshake = (new WebsocketHandshake($this->genURI()))->withHeader("Authorization", "Basic $creds");
-    //     $this->connection = \Amp\Websocket\Client\connect($handshake);
-    //     return $this->connection;
-    // }
+    public function singleSendAndReceive(
+        string $message,
+        array $sslContext = ["verify_peer" => false, "verify_peer_name" => false,]
+    ): object {
+        $this->websocket_client->setContext(context: ["ssl" => $sslContext]);
+        $this->websocket_client->text(message: $message);
+        return $this->websocket_client->receive();
+    }
+
+    public function close(): void
+    {
+        $this->websocket_client->close();
+    }
 
     /**
      * Formulate the URI for the connection
@@ -143,10 +145,13 @@ class Client implements \Stringable
         return new \Phrity\Net\Uri(uri_string: $uri_string);
     }
 
+    public static function credentialEncoder(string $user, string $password): string
+    {
+        return base64_encode(string: "$user:$password");
+    }
+
     private function encodeCredentials(): string
     {
-        $credentials = base64_encode(string: "$this->user:$this->password");
-        return $credentials;
-
+        return self::credentialEncoder(user: $this->user, password: $this->password);
     }
 }
