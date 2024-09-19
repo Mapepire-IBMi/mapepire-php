@@ -8,16 +8,18 @@ class ClientTest extends TestCase
 
     protected function setup(): void
     {
-        $this->client = Client::ClientFromEnv('tests/unit');
+        $this->client = Client::ClientFromEnv(dir: 'tests/unit');
     }
 
-    public function testToString()
+    public function testToString(): void
     {
-        $this->expectOutputString("\Mapepire\Client
+        $this->expectOutputString(
+            expectedString:
+            "\Mapepire\Client
 Server: localhost
 Port: 8076
 User: X
-Connection: 
+Websocket Client: WebSocket\Client(closed)
 "
         );
         print $this->client;
