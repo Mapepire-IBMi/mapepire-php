@@ -11,9 +11,6 @@ namespace Mapepire;
 
 require_once 'vendor/autoload.php';
 
-use \Amp\Websocket\Client\WebsocketHandshake;
-use \Amp\Websocket\Client\WebsocketConnection;
-
 /**
  * Client to Mapepire Server
  * @see https://mapepire-ibmi.github.io/
@@ -50,9 +47,9 @@ class Client implements \Stringable
 
     /**
      * The connection object
-     * @var ?WebsocketConnection
+     * @var $websocket_client
      */
-    protected ?WebsocketConnection $connection = null;
+    protected ?\Websocket\Client $websocket_client = null;
 
     /**
      * ctor takes server port user password
@@ -67,6 +64,7 @@ class Client implements \Stringable
         $this->port = $port;
         $this->user = $user;
         $this->password = $password;
+        $this->websocket_client = new \WebSocket\Client(uri: $this->genURI());
     }
 
     /**
@@ -79,7 +77,7 @@ class Client implements \Stringable
             . "Server: $this->server" . PHP_EOL
             . "Port: $this->port" . PHP_EOL
             . "User: $this->user" . PHP_EOL
-            . "Connection: $this->connection" . PHP_EOL
+            . "Websocket Client: $this->websocket_client" . PHP_EOL
         ;
         return $result;
     }
@@ -94,17 +92,17 @@ class Client implements \Stringable
      * - MAPEPIRE_DB_USER
      * - MAPEPIRE_DB_PASS
      * See the .env.sample in the root of the project
-     * @param string $dir directory containing the .env file if any
-     * @return \Mapepire\Client instance
+     * @param string $dir directory containing the .env file (if any such file)
+     * @return Client instance
      */
-    public static function ClientFromEnv(string $dir = __DIR__): Client
+    public static function ClientFromEnv(string $dir = '.'): Client
     {
-        $dotenv = Client::loadEnv($dir);
+        $dotenv = Client::loadEnv(dir: $dir);
         $client = new Client(
-            array_key_exists('MAPEPIRE_SERVER', $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : "localhost",
-            array_key_exists('MAPEPIRE_PORT', $_ENV) ? (int) $_ENV['MAPEPIRE_PORT'] : 8076,
-            $_ENV['MAPEPIRE_DB_USER'],
-            $_ENV['MAPEPIRE_DB_PASS']
+            server: array_key_exists(key: 'MAPEPIRE_SERVER', array: $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : "localhost",
+            port: array_key_exists(key: 'MAPEPIRE_PORT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_PORT'] : 8076,
+            user: $_ENV['MAPEPIRE_DB_USER'],
+            password: $_ENV['MAPEPIRE_DB_PASS']
         );
         $client->dotenv = $dotenv;
         return $client;
@@ -112,12 +110,12 @@ class Client implements \Stringable
 
     /**
      * Load the .env file if any
-     * @param string $dir Directory .env file found in, default `__DIR__`
+     * @param string $dir Directory .env file found in, default '.'
      * @return object the dotenv object
      */
-    protected static function loadEnv(string $dir = __DIR__): object
+    public static function loadEnv(string $dir = '.'): object
     {
-        $dotenv = \Dotenv\Dotenv::createImmutable($dir);
+        $dotenv = \Dotenv\Dotenv::createImmutable(paths: $dir);
         $dotenv->safeLoad();
         return $dotenv;
     }
@@ -125,29 +123,29 @@ class Client implements \Stringable
     /**
      * Connect the websocket
      * WON'T WORK YET until we factory the authorized connection
-     * @return \Amp\Websocket\Client\WebsocketConnection
+     * @return \Websocket\Client
      */
-    public function connect(): WebsocketConnection
-    {
-        $creds = $this->encodeCredentials();
-        $handshake = (new WebsocketHandshake($this->genURI()))->withHeader("Authorization", "Basic $creds");
-        $this->connection = \Amp\Websocket\Client\connect($handshake);
-        return $this->connection;
-    }
+    // public function connect(): \Websocket\Client
+    // {
+    //     $creds = $this->encodeCredentials();
+    //     $handshake = (new WebsocketHandshake($this->genURI()))->withHeader("Authorization", "Basic $creds");
+    //     $this->connection = \Amp\Websocket\Client\connect($handshake);
+    //     return $this->connection;
+    // }
 
     /**
      * Formulate the URI for the connection
      * @return string the uri
      */
-    private function genURI(): string
+    private function genURI(): \Phrity\Net\Uri
     {
-        $uri = "wss://$this->server:" . (string) $this->port . "/db/";
-        return $uri;
+        $uri_string = "wss://$this->server:" . (string) $this->port . "/db/";
+        return new \Phrity\Net\Uri(uri_string: $uri_string);
     }
 
     private function encodeCredentials(): string
     {
-        $credentials = base64_encode("$this->user:$this->password");
+        $credentials = base64_encode(string: "$this->user:$this->password");
         return $credentials;
 
     }
