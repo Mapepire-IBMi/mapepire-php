@@ -1,7 +1,13 @@
 {
     "name": "ibmi/mapepire-php",
-    "description": "mapepire-php is a PHP client for the Mapepire database access layer for Db2 on IBM i.",
     "type": "library",
+    "description": "mapepire-php is a PHP client for the Mapepire database access layer for Db2 on IBM i.",
+    "homepage": "https://mapepire-ibmi.github.io/",
+    "keywords": [
+        "ibmi",
+        "db2",
+        "database"
+    ],
     "license": "Apache-2.0",
     "authors": [
         {
@@ -18,11 +24,6 @@
             "Mapepire\\": "src/"
         }
     },
-    "keywords": [
-        "ibmi",
-        "db2",
-        "database"
-    ],
     "require": {
         "php": ">=8.1",
         "phrity/websocket": "^2.0",
