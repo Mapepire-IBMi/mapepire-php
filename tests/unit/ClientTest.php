@@ -18,7 +18,7 @@ class ClientTest extends TestCase
             "\Mapepire\Client
 Server: localhost
 Port: 8076
-User: X
+User: meMyself
 Websocket Client: WebSocket\Client(closed)
 "
         );

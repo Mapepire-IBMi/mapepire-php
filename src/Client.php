@@ -5,6 +5,7 @@
  * jwoehr@softwoehr.com
  * PO Box 82 Beulah, Colorado 81023-8282
  * All Rights Reserved
+ * Apache License 2.0 ... see LICENSE file
  */
 
 namespace Mapepire;
