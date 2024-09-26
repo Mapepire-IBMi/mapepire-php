@@ -11,6 +11,7 @@
 namespace Mapepire;
 
 require_once 'vendor/autoload.php';
+require_once 'DaemonServer.php';
 
 /**
  * SQLJob is a client to the Mapepire Server
@@ -41,6 +42,11 @@ class SQLJob implements \Stringable
      */
     private ?string $password = null;
     /**
+     * ignoreUnauthorized .IFF. true accept snakeoil cert
+     * @var bool
+     */
+    private bool $ignoreUnauthorized = false;
+    /**
      * dotenv object if any
      * @var ?object
      */
@@ -58,13 +64,15 @@ class SQLJob implements \Stringable
      * @param int $port mapepire host port
      * @param string $user user for authorization to IBM i Db2
      * @param string $password password for authorization to IBM i Db2
+     * @param bool $ignoreUnauthorized .IFF. true allow snakeoil cert
      */
-    public function __construct(string $host, int $port, string $user, string $password)
+    public function __construct(string $host, int $port, string $user, string $password, bool $ignoreUnauthorized = false)
     {
         $this->host = $host;
         $this->port = $port;
         $this->user = $user;
         $this->password = $password;
+        $this->ignoreUnauthorized = $ignoreUnauthorized;
         $this->websocket_client = new \Websocket\Client(uri: $this->genURI());
         $this->websocket_client->addHeader(name: "Authorization", content: "Basic " . $this->encodeCredentials());
     }
@@ -75,10 +83,11 @@ class SQLJob implements \Stringable
      */
     public function __toString(): string
     {
-        $result = "\Mapepire\SQLJob" . PHP_EOL
+        $result = "Mapepire\SQLJob" . PHP_EOL
             . "host: $this->host" . PHP_EOL
             . "port: $this->port" . PHP_EOL
             . "user: $this->user" . PHP_EOL
+            . "ignoreUnauthorized: $this->ignoreUnauthorized" . PHP_EOL
             . "Websocket\Client: $this->websocket_client" . PHP_EOL
         ;
         return $result;
@@ -88,10 +97,11 @@ class SQLJob implements \Stringable
      * Instance a SQLJob from environment variables, typically a .env file.
      * Loads the dotenv object and stores it in the created instance.
      * Chooses defaults if the variables do not appear in the $_ENV.
-     * - MAPEPIRE_host localhost
-     * - MAPEPIRE_PORT 8076
+     *   - MAPEPIRE_host localhost
+     *   - MAPEPIRE_PORT 8076
+     *   - MAPEPIRE_IGNORE_UNAUTHORIZED false
      * No defaults for
-     * - MAPEPIRE_DB_USER
+     *   - MAPEPIRE_DB_USER
      * - MAPEPIRE_DB_PASS
      * See the .env.sample in the root of the project
      * @param string $dir directory containing the .env file (if any such file)
@@ -104,9 +114,23 @@ class SQLJob implements \Stringable
             host: array_key_exists(key: 'MAPEPIRE_SERVER', array: $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : "localhost",
             port: array_key_exists(key: 'MAPEPIRE_PORT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_PORT'] : 8076,
             user: $_ENV['MAPEPIRE_DB_USER'],
-            password: $_ENV['MAPEPIRE_DB_PASS']
+            password: $_ENV['MAPEPIRE_DB_PASS'],
+            ignoreUnauthorized: array_key_exists(key: 'MAPEPIRE_IGNORE_UNAUTHORIZED', array: $_ENV) ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
+            : false,
         );
         $SQLJob->dotenv = $dotenv;
+        return $SQLJob;
+    }
+
+    public static function SQLJobFromDaemonServer(DaemonServer $daemonServer): SQLJob
+    {
+        $SQLJob = new SQLJob(
+            host: $daemonServer->host,
+            port: $daemonServer->port,
+            user: $daemonServer->user,
+            password: $daemonServer->password,
+            ignoreUnauthorized: $daemonServer->ignoreUnauthorized,
+        );
         return $SQLJob;
     }
 

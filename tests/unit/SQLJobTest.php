@@ -15,10 +15,11 @@ class SQLJobTest extends TestCase
     {
         $this->expectOutputString(
             expectedString:
-            "\Mapepire\SQLJob
+            "Mapepire\SQLJob
 host: localhost
 port: 8076
 user: meMyself
+ignoreUnauthorized: 1
 Websocket\Client: WebSocket\Client(closed)
 "
         );
