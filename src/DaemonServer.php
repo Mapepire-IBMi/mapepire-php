@@ -24,14 +24,16 @@ class DaemonServer implements \Stringable
      * @param string $user Userid to authorize on Mapepire server
      * @param string $password Password to authorize on Mapepire server
      * @param bool $ignoreUnauthorized .IFF. true ignore self-signed, default false
+     * @param bool $verifyHostName .IFF. true verify the host name
      */
-    public function __construct(string $host, int $port, string $user, string $password, bool $ignoreUnauthorized = false)
+    public function __construct(string $host, int $port, string $user, string $password, bool $ignoreUnauthorized = false, bool $verifyHostName = true)
     {
         $this->host = $host;
         $this->port = $port;
         $this->user = $user;
         $this->password = $password;
         $this->ignoreUnauthorized = $ignoreUnauthorized;
+        $this->verifyHostName = $verifyHostName;
     }
 
     /**
@@ -46,6 +48,7 @@ class DaemonServer implements \Stringable
             . "user: $this->user" . PHP_EOL
             . "password: " . ($this->password ? "(hidden)" : "(no password was provided)") . PHP_EOL
             . "ignoreUnauthorized: $this->ignoreUnauthorized" . PHP_EOL
+            . "verifyHostName: $this->verifyHostName" . PHP_EOL
         ;
         return $result;
     }
@@ -69,6 +72,7 @@ class DaemonServer implements \Stringable
      *   - MAPEPIRE_SERVER localhost
      *   - MAPEPIRE_PORT 8076
      *   - MAPEPIRE_IGNORE_UNAUTHORIZED false
+     *   - MAPEPIRE_VERIFY_HOST_NAME true
      * No defaults for
      * - MAPEPIRE_DB_USER
      * - MAPEPIRE_DB_PASS
@@ -87,6 +91,9 @@ class DaemonServer implements \Stringable
             ignoreUnauthorized: array_key_exists(key: 'MAPEPIRE_IGNORE_UNAUTHORIZED', array: $_ENV)
             ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
             : false,
+            verifyHostName: array_key_exists(key: 'MAPEPIRE_IGNORE_UNAUTHORIZED', array: $_ENV)
+            ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
+            : false,
         );
         return $DaemonServer;
     }
@@ -95,4 +102,5 @@ class DaemonServer implements \Stringable
     public ?string $user;
     public ?string $password;
     public ?bool $ignoreUnauthorized;
+    public ?bool $verifyHostName;
 }

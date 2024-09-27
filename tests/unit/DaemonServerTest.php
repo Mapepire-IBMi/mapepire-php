@@ -21,6 +21,7 @@ port: 8076
 user: meMyself
 password: (hidden)
 ignoreUnauthorized: 1
+verifyHostName: 1
 "
         );
         print $this->DaemonServer;

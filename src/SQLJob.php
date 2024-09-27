@@ -46,6 +46,11 @@ class SQLJob implements \Stringable
      */
     private bool $ignoreUnauthorized = false;
     /**
+     * verifyHostName .IFF. true
+     * @var ?object
+     */
+    private bool $verifyHostName = true;
+    /**
      * dotenv object if any
      * @var ?object
      */
@@ -66,15 +71,18 @@ class SQLJob implements \Stringable
      * @param string $password password for authorization to IBM i Db2
      * @param bool $ignoreUnauthorized .IFF. true allow snakeoil cert
      */
-    public function __construct(string $host, int $port, string $user, string $password, bool $ignoreUnauthorized = false)
+    public function __construct(string $host, int $port, string $user, string $password, bool $ignoreUnauthorized = false, bool $verifyHostName)
     {
         $this->host = $host;
         $this->port = $port;
         $this->user = $user;
         $this->password = $password;
         $this->ignoreUnauthorized = $ignoreUnauthorized;
+        $this->verifyHostName = $verifyHostName;
         $this->websocket_client = new \WebSocket\Client(uri: $this->genURI());
         $this->websocket_client->addHeader(name: "Authorization", content: "Basic " . $this->encodeCredentials());
+        $this->websocket_client->addMiddleware(middleware: new \WebSocket\Middleware\CloseHandler());
+        $this->websocket_client->addMiddleware(middleware: new \WebSocket\Middleware\PingResponder());
     }
 
     /**
@@ -117,6 +125,8 @@ class SQLJob implements \Stringable
             password: $_ENV['MAPEPIRE_DB_PASS'],
             ignoreUnauthorized: array_key_exists(key: 'MAPEPIRE_IGNORE_UNAUTHORIZED', array: $_ENV) ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
             : false,
+            verifyHostName: array_key_exists(key: 'MAPEPIRE_VERIFY_HOST_NAME', array: $_ENV) ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
+            : false,
         );
         $sqlJob->dotenv = $dotenv;
         return $sqlJob;
@@ -130,6 +140,7 @@ class SQLJob implements \Stringable
             user: $daemonServer->user,
             password: $daemonServer->password,
             ignoreUnauthorized: $daemonServer->ignoreUnauthorized,
+            verifyHostName: $daemonServer->verifyHostName,
         );
         return $SQLJob;
     }
@@ -148,8 +159,9 @@ class SQLJob implements \Stringable
 
     public function singleSendAndReceive(
         string $message,
-        array $sslContext = ["verify_peer" => false, "verify_peer_name" => false,]
+        ?array $sslContext = null,
     ): object {
+        $sslContext = $sslContext ?: ["verify_peer" => !$this->ignoreUnauthorized, "verify_peer_name" => $this->verifyHostName,];
         $this->websocket_client->setContext(context: ["ssl" => $sslContext]);
         $this->websocket_client->text(message: $message);
         return $this->websocket_client->receive();
@@ -302,6 +314,24 @@ class SQLJob implements \Stringable
     public function setWebsocketClient(?\WebSocket\Client $websocket_client): self
     {
         $this->websocket_client = $websocket_client;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of verifyHostName
+     */
+    public function isVerifyHostName(): bool
+    {
+        return $this->verifyHostName;
+    }
+
+    /**
+     * Set the value of verifyHostName
+     */
+    public function setVerifyHostName(bool $verifyHostName): self
+    {
+        $this->verifyHostName = $verifyHostName;
 
         return $this;
     }
