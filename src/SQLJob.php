@@ -55,7 +55,7 @@ class SQLJob implements \Stringable
      * The connection object
      * @var $websocket_client
      */
-    protected ?\WebSocket\Client $websocket_client = null;
+    private ?\WebSocket\Client $websocket_client = null;
 
     /**
      * ctor takes host port user password and optionally a flag
@@ -178,5 +178,131 @@ class SQLJob implements \Stringable
     private function encodeCredentials(): string
     {
         return self::credentialEncoder(user: $this->user, password: $this->password);
+    }
+
+    /**
+     * Get the value of host
+     */
+    public function getHost(): ?string
+    {
+        return $this->host;
+    }
+
+    /**
+     * Set the value of host
+     */
+    public function setHost(?string $host): self
+    {
+        $this->host = $host;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of port
+     */
+    public function getPort(): ?int
+    {
+        return $this->port;
+    }
+
+    /**
+     * Set the value of port
+     */
+    public function setPort(?int $port): self
+    {
+        $this->port = $port;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of user
+     */
+    public function getUser(): ?string
+    {
+        return $this->user;
+    }
+
+    /**
+     * Set the value of user
+     */
+    public function setUser(?string $user): self
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of password
+     */
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    /**
+     * Set the value of password
+     */
+    public function setPassword(?string $password): self
+    {
+        $this->password = $password;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of ignoreUnauthorized
+     */
+    public function isIgnoreUnauthorized(): bool
+    {
+        return $this->ignoreUnauthorized;
+    }
+
+    /**
+     * Set the value of ignoreUnauthorized
+     */
+    public function setIgnoreUnauthorized(bool $ignoreUnauthorized): self
+    {
+        $this->ignoreUnauthorized = $ignoreUnauthorized;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of dotenv
+     */
+    public function getDotenv(): ?object
+    {
+        return $this->dotenv;
+    }
+
+    /**
+     * Set the value of dotenv
+     */
+    public function setDotenv(?object $dotenv): self
+    {
+        $this->dotenv = $dotenv;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of websocket_client
+     */
+    public function getWebsocketClient(): ?\WebSocket\Client
+    {
+        return $this->websocket_client;
+    }
+
+    /**
+     * Set the value of websocket_client
+     */
+    public function setWebsocketClient(?\WebSocket\Client $websocket_client): self
+    {
+        $this->websocket_client = $websocket_client;
+
+        return $this;
     }
 }
