@@ -55,7 +55,7 @@ class SQLJob implements \Stringable
      * The connection object
      * @var $websocket_client
      */
-    protected ?\Websocket\Client $websocket_client = null;
+    protected ?\WebSocket\Client $websocket_client = null;
 
     /**
      * ctor takes host port user password and optionally a flag
@@ -73,7 +73,7 @@ class SQLJob implements \Stringable
         $this->user = $user;
         $this->password = $password;
         $this->ignoreUnauthorized = $ignoreUnauthorized;
-        $this->websocket_client = new \Websocket\Client(uri: $this->genURI());
+        $this->websocket_client = new \WebSocket\Client(uri: $this->genURI());
         $this->websocket_client->addHeader(name: "Authorization", content: "Basic " . $this->encodeCredentials());
     }
 

@@ -50,7 +50,7 @@ class Client implements \Stringable
      * The connection object
      * @var $websocket_client
      */
-    protected ?\Websocket\Client $websocket_client = null;
+    protected ?\WebSocket\Client $websocket_client = null;
 
     /**
      * ctor takes server port user password
