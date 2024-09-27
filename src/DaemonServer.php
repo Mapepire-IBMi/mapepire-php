@@ -12,6 +12,9 @@ namespace Mapepire;
 
 require_once 'vendor/autoload.php';
 
+/**
+ * DaemonServer structure represents factors to initialize a SQLJob instance.
+ */
 class DaemonServer implements \Stringable
 {
     /**
@@ -41,7 +44,7 @@ class DaemonServer implements \Stringable
             . "host: $this->host" . PHP_EOL
             . "port: $this->port" . PHP_EOL
             . "user: $this->user" . PHP_EOL
-            . "password: " .  ($this->password ? "(hidden)" : "(no password was provided)") . PHP_EOL
+            . "password: " . ($this->password ? "(hidden)" : "(no password was provided)") . PHP_EOL
             . "ignoreUnauthorized: $this->ignoreUnauthorized" . PHP_EOL
         ;
         return $result;

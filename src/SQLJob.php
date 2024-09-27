@@ -59,7 +59,8 @@ class SQLJob implements \Stringable
     protected ?\Websocket\Client $websocket_client = null;
 
     /**
-     * ctor takes host port user password
+     * ctor takes host port user password and optionally a flag
+     * to accept self-signed certificates
      * @param string $host mapepire host dns or ipaddr
      * @param int $port mapepire host port
      * @param string $user user for authorization to IBM i Db2
