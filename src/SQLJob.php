@@ -11,7 +11,6 @@
 namespace Mapepire;
 
 require_once 'vendor/autoload.php';
-require_once 'DaemonServer.php';
 
 /**
  * SQLJob is a client to the Mapepire Server
@@ -111,7 +110,7 @@ class SQLJob implements \Stringable
     public static function SQLJobFromEnv(string $dir = '.'): SQLJob
     {
         $dotenv = SQLJob::loadEnv(dir: $dir);
-        $SQLJob = new SQLJob(
+        $sqlJob = new SQLJob(
             host: array_key_exists(key: 'MAPEPIRE_SERVER', array: $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : "localhost",
             port: array_key_exists(key: 'MAPEPIRE_PORT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_PORT'] : 8076,
             user: $_ENV['MAPEPIRE_DB_USER'],
@@ -119,8 +118,8 @@ class SQLJob implements \Stringable
             ignoreUnauthorized: array_key_exists(key: 'MAPEPIRE_IGNORE_UNAUTHORIZED', array: $_ENV) ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
             : false,
         );
-        $SQLJob->dotenv = $dotenv;
-        return $SQLJob;
+        $sqlJob->dotenv = $dotenv;
+        return $sqlJob;
     }
 
     public static function SQLJobFromDaemonServer(DaemonServer $daemonServer): SQLJob
