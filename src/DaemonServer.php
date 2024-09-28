@@ -1,11 +1,11 @@
 <?php
 
 /*
- * Copyright 2024 Jack J. Woehr
- * jwoehr@softwoehr.com
- * PO Box 82 Beulah, Colorado 81023-8282
+ * Copyright 2024 IBM
  * All Rights Reserved
  * Apache License 2.0 ... see LICENSE file
+ * Author: Jack J. Woehr
+ * jwoehr@softwoehr.com
  */
 
 namespace Mapepire;
@@ -123,13 +123,49 @@ class DaemonServer implements \Stringable
         );
         return $DaemonServer;
     }
+    /**
+     * DNS or IP of Mapepire server
+     * @var ?string
+     */
     public ?string $host;
+    /**
+     * port number of Mapepire host
+     * @var ?int
+     */
     public ?int $port;
+    /**
+     * User profile for IBM i Db2
+     * @var ?string
+     */
     public ?string $user;
+    /**
+     * Password for IBM i Db2
+     * @var ?string
+     */
     public ?string $password;
+    /**
+     * ignoreUnauthorized .IFF. true accept snakeoil cert
+     * @var bool
+     */
     public ?bool $ignoreUnauthorized;
+    /**
+     * verifyHostName .IFF. true
+     * @var ?bool
+     */
     public ?bool $verifyHostName;
+    /**
+     * Connection timeout
+     * @var ?int
+     */
     public ?int $timeout; // default 60 seconds
+    /**
+     * Communication frame size
+     * @var ?int
+     */
     public ?int $framesize; // default 4096 bytes
+    /**
+     * Should attempt connection persistent
+     * @var ?bool
+     */
     public ?bool $persistent;    // If client should attempt persistent connection
 }

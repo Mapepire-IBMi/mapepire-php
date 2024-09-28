@@ -1,11 +1,11 @@
 <?php
 
 /*
- * Copyright 2024 Jack J. Woehr
- * jwoehr@softwoehr.com
- * PO Box 82 Beulah, Colorado 81023-8282
+ * Copyright 2024 IBM
  * All Rights Reserved
  * Apache License 2.0 ... see LICENSE file
+ * Author: Jack J. Woehr
+ * jwoehr@softwoehr.com
  */
 
 namespace Mapepire;
@@ -19,63 +19,6 @@ require_once 'vendor/autoload.php';
  */
 class SQLJob implements \Stringable
 {
-
-    /**
-     * DNS or IP of Mapepire server
-     * @var ?string
-     */
-    protected ?string $host = null;
-    /**
-     * port number of Mapepire host
-     * @var ?int
-     */
-    protected ?int $port = null;
-    /**
-     * User profile for IBM i Db2
-     * @var ?string
-     */
-    protected ?string $user = null;
-    /**
-     * Password for IBM i Db2
-     * @var ?string
-     */
-    private ?string $password = null;
-    /**
-     * ignoreUnauthorized .IFF. true accept snakeoil cert
-     * @var bool
-     */
-    private ?bool $ignoreUnauthorized = false;
-    /**
-     * verifyHostName .IFF. true
-     * @var ?bool
-     */
-    private ?bool $verifyHostName = true;
-    /**
-     * Connection timeout
-     * @var ?int
-     */
-    private ?int $timeout; // default 60 seconds
-    /**
-     * Communication frame size
-     * @var ?int
-     */
-    private ?int $framesize; // default 4096 bytes
-    /**
-     * Should attempt connection persistent
-     * @var ?bool
-     */
-    private ?bool $persistent;    // If client should attempt persistent connection
-    /**
-     * dotenv object if any
-     * @var ?object
-     */
-    private ?object $dotenv = null;
-    /**
-     * The connection object
-     * @var $websocket_client
-     */
-    private ?\WebSocket\Client $websocket_client = null;
-
     /**
      * Ctor, all defaults identified as constants in \Mapepire\DaemonServer
      * @param string $host mapepire host dns or ipaddr
@@ -462,4 +405,60 @@ class SQLJob implements \Stringable
 
         return $this;
     }
+    /**
+     * DNS or IP of Mapepire server
+     * @var ?string
+     */
+    protected ?string $host = null;
+    /**
+     * port number of Mapepire host
+     * @var ?int
+     */
+    protected ?int $port = null;
+    /**
+     * User profile for IBM i Db2
+     * @var ?string
+     */
+    protected ?string $user = null;
+    /**
+     * Password for IBM i Db2
+     * @var ?string
+     */
+    private ?string $password = null;
+    /**
+     * ignoreUnauthorized .IFF. true accept snakeoil cert
+     * @var bool
+     */
+    private ?bool $ignoreUnauthorized = false;
+    /**
+     * verifyHostName .IFF. true
+     * @var ?bool
+     */
+    private ?bool $verifyHostName = true;
+    /**
+     * Connection timeout
+     * @var ?int
+     */
+    private ?int $timeout; // default 60 seconds
+    /**
+     * Communication frame size
+     * @var ?int
+     */
+    private ?int $framesize; // default 4096 bytes
+    /**
+     * Should attempt connection persistent
+     * @var ?bool
+     */
+    private ?bool $persistent;    // If client should attempt persistent connection
+    /**
+     * dotenv object if any
+     * @var ?object
+     */
+    private ?object $dotenv = null;
+    /**
+     * The connection object
+     * @var $websocket_client
+     */
+    private ?\WebSocket\Client $websocket_client = null;
+
 }
