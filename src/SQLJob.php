@@ -99,7 +99,7 @@ class SQLJob implements \Stringable
      * @param string $dir directory containing the .env file (if any such file)
      * @return SQLJob instance
      */
-    public static function SQLJobFromEnv(string $dir = '.'): SQLJob
+    public static function SQLJobFromDotEnv(string $dir = '.'): SQLJob
     {
         $dotenv = SQLJob::loadEnv(dir: $dir);
         $sqlJob = new SQLJob(

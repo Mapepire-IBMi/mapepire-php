@@ -9,7 +9,7 @@ class SQLJobTest extends TestCase
 
     protected function setup(): void
     {
-        $this->sqlJob = SQLJob::SQLJobFromEnv(dir: 'tests/unit');
+        $this->sqlJob = SQLJob::SQLJobFromDotEnv(dir: 'tests/unit');
         $this->ds = DaemonServer::DaemonServerFromDotEnv(dir: 'tests/unit');
         $this->sqlJobDs = SQLJob::SQLJobFromDaemonServer(daemonServer: $this->ds);
     }
