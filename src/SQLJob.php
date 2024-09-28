@@ -44,29 +44,38 @@ class SQLJob implements \Stringable
      * ignoreUnauthorized .IFF. true accept snakeoil cert
      * @var bool
      */
-    private bool $ignoreUnauthorized = false;
+    private ?bool $ignoreUnauthorized = false;
     /**
      * verifyHostName .IFF. true
-     * @var ?object
+     * @var ?bool
      */
-    private bool $verifyHostName = true;
-
-
+    private ?bool $verifyHostName = true;
+    /**
+     * Connection timeout
+     * @var ?int
+     */
     private ?int $timeout; // default 60 seconds
+    /**
+     * Communication frame size
+     * @var ?int
+     */
     private ?int $framesize; // default 4096 bytes
+    /**
+     * Should attempt connection persistent
+     * @var ?bool
+     */
     private ?bool $persistent;    // If client should attempt persistent connection
-
     /**
      * dotenv object if any
      * @var ?object
      */
     private ?object $dotenv = null;
-
     /**
      * The connection object
      * @var $websocket_client
      */
     private ?\WebSocket\Client $websocket_client = null;
+
     /**
      * Ctor, all defaults identified as constants in \Mapepire\DaemonServer
      * @param string $host mapepire host dns or ipaddr
@@ -132,12 +141,17 @@ class SQLJob implements \Stringable
      * Instance a SQLJob from environment variables, typically a .env file.
      * Loads the dotenv object and stores it in the created instance.
      * Chooses defaults if the variables do not appear in the $_ENV.
+     * All the defaults appear as constants in Mapepire\DaemonServer.
      *   - MAPEPIRE_host localhost
      *   - MAPEPIRE_PORT 8076
      *   - MAPEPIRE_IGNORE_UNAUTHORIZED false
+     *   - MAPEPIRE_VERIFY_HOSTNAME true
+     *   - MAPEPIRE_TIMEOUT 60 seconds
+     *   - MAPEPIRE_FRAMESIZE 4096
+     *   - MAPEPIRE_PERSISTENCE true
      * No defaults for
      *   - MAPEPIRE_DB_USER
-     * - MAPEPIRE_DB_PASS
+     *   - MAPEPIRE_DB_PASS
      * See the .env.sample in the root of the project
      * @param string $dir directory containing the .env file (if any such file)
      * @return SQLJob instance
@@ -164,6 +178,9 @@ class SQLJob implements \Stringable
         return $sqlJob;
     }
 
+    /**
+     * Instance a SQLJob from a DaemonServer instance
+     */
     public static function SQLJobFromDaemonServer(DaemonServer $daemonServer): SQLJob
     {
         $SQLJob = new SQLJob(
@@ -192,16 +209,27 @@ class SQLJob implements \Stringable
         return $dotenv;
     }
 
+    /**
+     * Send message and receive response.
+     * Connects if not currently connected.
+     * @param string $message the JSON message to the Mapepire server
+     * @param mixed $sslContext the specific SSL Context. If none, uses the context created by ctor.
+     * @return \WebSocket\Message\Text the response text object .. ->getContent() to get the JSON message content
+     */
     public function singleSendAndReceive(
         string $message,
         ?array $sslContext = null,
-    ): object {
+    ): \WebSocket\Message\Text {
         $sslContext = $sslContext ?: ["verify_peer" => !$this->ignoreUnauthorized, "verify_peer_name" => $this->verifyHostName,];
         $this->websocket_client->setContext(context: ["ssl" => $sslContext]);
         $this->websocket_client->text(message: $message);
         return $this->websocket_client->receive();
     }
 
+    /**
+     * Close the websocket connection
+     * @return void
+     */
     public function close(): void
     {
         $this->websocket_client->close();
@@ -217,11 +245,21 @@ class SQLJob implements \Stringable
         return new \Phrity\Net\Uri(uri_string: $uri_string);
     }
 
+    /**
+     * base64 encode credentials for Basic Auth
+     * @param string $user the user
+     * @param string $password the password
+     * @return string the encoded creds
+     */
     public static function credentialEncoder(string $user, string $password): string
     {
         return base64_encode(string: "$user:$password");
     }
 
+    /**
+     * Encode specific credentials stored in this.
+     * @return string encoded creds
+     */
     private function encodeCredentials(): string
     {
         return self::credentialEncoder(user: $this->user, password: $this->password);
