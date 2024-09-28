@@ -23,6 +23,10 @@ host: localhost
 port: 8076
 user: meMyself
 ignoreUnauthorized: 1
+verifyHostName: 1
+timeout: 60
+framesize: 4096
+persistent: 
 Websocket\Client: WebSocket\Client(closed)
 "
         );
@@ -38,6 +42,10 @@ host: localhost
 port: 8076
 user: meMyself
 ignoreUnauthorized: 1
+verifyHostName: 1
+timeout: 60
+framesize: 4096
+persistent: 
 Websocket\Client: WebSocket\Client(closed)
 "
         );

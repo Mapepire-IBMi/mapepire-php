@@ -50,39 +50,62 @@ class SQLJob implements \Stringable
      * @var ?object
      */
     private bool $verifyHostName = true;
+
+
+    private ?int $timeout; // default 60 seconds
+    private ?int $framesize; // default 4096 bytes
+    private ?bool $persistent;    // If client should attempt persistent connection
+
     /**
      * dotenv object if any
      * @var ?object
      */
-    protected ?object $dotenv = null;
+    private ?object $dotenv = null;
 
     /**
      * The connection object
      * @var $websocket_client
      */
     private ?\WebSocket\Client $websocket_client = null;
-
     /**
-     * ctor takes host port user password and optionally a flag
-     * to accept self-signed certificates
+     * Ctor, all defaults identified as constants in \Mapepire\DaemonServer
      * @param string $host mapepire host dns or ipaddr
      * @param int $port mapepire host port
      * @param string $user user for authorization to IBM i Db2
      * @param string $password password for authorization to IBM i Db2
      * @param bool $ignoreUnauthorized .IFF. true allow snakeoil cert
+     * @param bool $verifyHostName .IFF. true verify hostname
+     * @param int $timeout timeout in seconds
+     * @param int $framesize frame size
+     * @param bool $persistent try for persistent connection .IFF. true
      */
-    public function __construct(string $host, int $port, string $user, string $password, bool $ignoreUnauthorized = false, bool $verifyHostName)
-    {
+    public function __construct(
+        string $host = DaemonServer::DEFAULT_HOSTNAME,
+        int $port = DaemonServer::DEFAULT_PORT,
+        string $user = null,
+        string $password = null,
+        bool $ignoreUnauthorized = DaemonServer::DEFAULT_IGNORE_UNAUTHORIZED,
+        bool $verifyHostName = DaemonServer::DEFAULT_VERIFY_HOSTNAME,
+        int $timeout = DaemonServer::DEFAULT_TIMEOUT,
+        int $framesize = DaemonServer::DEFAULT_FRAMESIZE,
+        bool $persistent = DaemonServer::DEFAULT_PERSISTENCE
+    ) {
         $this->host = $host;
         $this->port = $port;
         $this->user = $user;
         $this->password = $password;
         $this->ignoreUnauthorized = $ignoreUnauthorized;
         $this->verifyHostName = $verifyHostName;
+        $this->timeout = $timeout;
+        $this->framesize = $framesize;
+        $this->persistent = $persistent;
         $this->websocket_client = new \WebSocket\Client(uri: $this->genURI());
         $this->websocket_client->addHeader(name: "Authorization", content: "Basic " . $this->encodeCredentials());
         $this->websocket_client->addMiddleware(middleware: new \WebSocket\Middleware\CloseHandler());
         $this->websocket_client->addMiddleware(middleware: new \WebSocket\Middleware\PingResponder());
+        $this->websocket_client->setTimeout = $this->timeout;
+        $this->websocket_client->setFrameSize = $this->framesize;
+        $this->websocket_client->setPersistent = $this->persistent;
     }
 
     /**
@@ -96,6 +119,10 @@ class SQLJob implements \Stringable
             . "port: $this->port" . PHP_EOL
             . "user: $this->user" . PHP_EOL
             . "ignoreUnauthorized: $this->ignoreUnauthorized" . PHP_EOL
+            . "verifyHostName: $this->verifyHostName" . PHP_EOL
+            . "timeout: $this->timeout" . PHP_EOL
+            . "framesize: $this->framesize" . PHP_EOL
+            . "persistent: $this->persistent" . PHP_EOL
             . "Websocket\Client: $this->websocket_client" . PHP_EOL
         ;
         return $result;
@@ -119,14 +146,19 @@ class SQLJob implements \Stringable
     {
         $dotenv = SQLJob::loadEnv(dir: $dir);
         $sqlJob = new SQLJob(
-            host: array_key_exists(key: 'MAPEPIRE_SERVER', array: $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : "localhost",
-            port: array_key_exists(key: 'MAPEPIRE_PORT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_PORT'] : 8076,
+            host: array_key_exists(key: 'MAPEPIRE_SERVER', array: $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : DaemonServer::DEFAULT_HOSTNAME,
+            port: array_key_exists(key: 'MAPEPIRE_PORT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_PORT'] : DaemonServer::DEFAULT_PORT,
             user: $_ENV['MAPEPIRE_DB_USER'],
             password: $_ENV['MAPEPIRE_DB_PASS'],
-            ignoreUnauthorized: array_key_exists(key: 'MAPEPIRE_IGNORE_UNAUTHORIZED', array: $_ENV) ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
-            : false,
-            verifyHostName: array_key_exists(key: 'MAPEPIRE_VERIFY_HOST_NAME', array: $_ENV) ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
-            : false,
+            ignoreUnauthorized: array_key_exists(key: 'MAPEPIRE_IGNORE_UNAUTHORIZED', array: $_ENV)
+            ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
+            : DaemonServer::DEFAULT_IGNORE_UNAUTHORIZED,
+            verifyHostName: array_key_exists(key: 'MAPEPIRE_VERIFY_HOSTNAME', array: $_ENV)
+            ? strtolower(string: $_ENV['MAPEPIRE_VERIFY_HOSTNAME']) == 'true'
+            : DaemonServer::DEFAULT_VERIFY_HOSTNAME,
+            timeout: array_key_exists(key: 'MAPEPIRE_TIMEOUT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_TIMEOUT'] : DaemonServer::DEFAULT_TIMEOUT,
+            framesize: array_key_exists(key: 'MAPEPIRE_FRAMESIZE', array: $_ENV) ? (int) $_ENV['MAPEPIRE_FRAMESIZE'] : DaemonServer::DEFAULT_FRAMESIZE,
+            persistent: array_key_exists(key: 'MAPEPIRE_PERSISTENCE', array: $_ENV) ? (int) $_ENV['MAPEPIRE_DEFAULT_PERSISTENCE'] : DaemonServer::DEFAULT_PERSISTENCE
         );
         $sqlJob->dotenv = $dotenv;
         return $sqlJob;
@@ -141,6 +173,9 @@ class SQLJob implements \Stringable
             password: $daemonServer->password,
             ignoreUnauthorized: $daemonServer->ignoreUnauthorized,
             verifyHostName: $daemonServer->verifyHostName,
+            timeout: $daemonServer->timeout,
+            framesize: $daemonServer->framesize,
+            persistent: $daemonServer->persistent
         );
         return $SQLJob;
     }
@@ -332,6 +367,60 @@ class SQLJob implements \Stringable
     public function setVerifyHostName(bool $verifyHostName): self
     {
         $this->verifyHostName = $verifyHostName;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of timeout
+     */
+    public function getTimeout(): ?int
+    {
+        return $this->timeout;
+    }
+
+    /**
+     * Set the value of timeout
+     */
+    public function setTimeout(?int $timeout): self
+    {
+        $this->timeout = $timeout;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of framesize
+     */
+    public function getFramesize(): ?int
+    {
+        return $this->framesize;
+    }
+
+    /**
+     * Set the value of framesize
+     */
+    public function setFramesize(?int $framesize): self
+    {
+        $this->framesize = $framesize;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of persistent
+     */
+    public function isPersistent(): ?bool
+    {
+        return $this->persistent;
+    }
+
+    /**
+     * Set the value of persistent
+     */
+    public function setPersistent(?bool $persistent): self
+    {
+        $this->persistent = $persistent;
 
         return $this;
     }

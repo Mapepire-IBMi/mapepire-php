@@ -8,7 +8,7 @@ class DaemonServerTest extends TestCase
 
     protected function setup(): void
     {
-        $this->DaemonServer = DaemonServer::DaemonServerFromDotEnv(dir: 'tests/unit');
+        $this->daemonServer = DaemonServer::DaemonServerFromDotEnv(dir: 'tests/unit');
     }
 
     public function testToString(): void
@@ -22,14 +22,17 @@ user: meMyself
 password: (hidden)
 ignoreUnauthorized: 1
 verifyHostName: 1
+timeout: 60
+framesize: 4096
+persistent: 
 "
         );
-        print $this->DaemonServer;
+        print $this->daemonServer;
     }
 
     protected function tearDown(): void
     {
-        unset($this->DaemonServer);
+        unset($this->daemonServer);
     }
-    private DaemonServer $DaemonServer;
+    private DaemonServer $daemonServer;
 }
