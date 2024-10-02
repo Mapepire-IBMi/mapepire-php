@@ -20,7 +20,7 @@ host: localhost
 port: 8076
 user: meMyself
 password: (hidden)
-ignoreUnauthorized: 1
+verifyHostCert: 1
 verifyHostName: 1
 timeout: 60
 framesize: 4096

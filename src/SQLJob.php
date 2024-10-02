@@ -25,19 +25,19 @@ class SQLJob implements \Stringable
      * @param int $port mapepire host port
      * @param string $user user for authorization to IBM i Db2
      * @param string $password password for authorization to IBM i Db2
-     * @param bool $ignoreUnauthorized .IFF. true allow snakeoil cert
+     * @param bool $verifyHostCert .IFF. false allow snakeoil cert
      * @param bool $verifyHostName .IFF. true verify hostname
      * @param int $timeout timeout in seconds
      * @param int $framesize frame size
      * @param bool $persistent try for persistent connection .IFF. true
      */
     public function __construct(
-        string $host = DaemonServer::DEFAULT_HOSTNAME,
+        string $host = DaemonServer::DEFAULT_HOST_NAME,
         int $port = DaemonServer::DEFAULT_PORT,
         string $user = null,
         string $password = null,
-        bool $ignoreUnauthorized = DaemonServer::DEFAULT_IGNORE_UNAUTHORIZED,
-        bool $verifyHostName = DaemonServer::DEFAULT_VERIFY_HOSTNAME,
+        bool $verifyHostCert = DaemonServer::DEFAULT_VERIFY_HOST_CERT,
+        bool $verifyHostName = DaemonServer::DEFAULT_VERIFY_HOST_NAME,
         int $timeout = DaemonServer::DEFAULT_TIMEOUT,
         int $framesize = DaemonServer::DEFAULT_FRAMESIZE,
         bool $persistent = DaemonServer::DEFAULT_PERSISTENCE
@@ -46,7 +46,7 @@ class SQLJob implements \Stringable
         $this->port = $port;
         $this->user = $user;
         $this->password = $password;
-        $this->ignoreUnauthorized = $ignoreUnauthorized;
+        $this->verifyHostCert = $verifyHostCert;
         $this->verifyHostName = $verifyHostName;
         $this->timeout = $timeout;
         $this->framesize = $framesize;
@@ -70,7 +70,7 @@ class SQLJob implements \Stringable
             . "host: $this->host" . PHP_EOL
             . "port: $this->port" . PHP_EOL
             . "user: $this->user" . PHP_EOL
-            . "ignoreUnauthorized: $this->ignoreUnauthorized" . PHP_EOL
+            . "verifyHostCert: $this->verifyHostCert" . PHP_EOL
             . "verifyHostName: $this->verifyHostName" . PHP_EOL
             . "timeout: $this->timeout" . PHP_EOL
             . "framesize: $this->framesize" . PHP_EOL
@@ -87,8 +87,8 @@ class SQLJob implements \Stringable
      * All the defaults appear as constants in Mapepire\DaemonServer.
      *   - MAPEPIRE_host localhost
      *   - MAPEPIRE_PORT 8076
-     *   - MAPEPIRE_IGNORE_UNAUTHORIZED false
-     *   - MAPEPIRE_VERIFY_HOSTNAME true
+     *   - MAPEPIRE_VERIFY_HOST_CERT true
+     *   - MAPEPIRE_VERIFY_HOST_NAME true
      *   - MAPEPIRE_TIMEOUT 60 seconds
      *   - MAPEPIRE_FRAMESIZE 4096
      *   - MAPEPIRE_PERSISTENCE true
@@ -103,16 +103,16 @@ class SQLJob implements \Stringable
     {
         $dotenv = SQLJob::loadEnv(dir: $dir);
         $sqlJob = new SQLJob(
-            host: array_key_exists(key: 'MAPEPIRE_SERVER', array: $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : DaemonServer::DEFAULT_HOSTNAME,
+            host: array_key_exists(key: 'MAPEPIRE_SERVER', array: $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : DaemonServer::DEFAULT_HOST_NAME,
             port: array_key_exists(key: 'MAPEPIRE_PORT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_PORT'] : DaemonServer::DEFAULT_PORT,
             user: $_ENV['MAPEPIRE_DB_USER'],
             password: $_ENV['MAPEPIRE_DB_PASS'],
-            ignoreUnauthorized: array_key_exists(key: 'MAPEPIRE_IGNORE_UNAUTHORIZED', array: $_ENV)
-            ? strtolower(string: $_ENV['MAPEPIRE_IGNORE_UNAUTHORIZED']) == 'true'
-            : DaemonServer::DEFAULT_IGNORE_UNAUTHORIZED,
-            verifyHostName: array_key_exists(key: 'MAPEPIRE_VERIFY_HOSTNAME', array: $_ENV)
-            ? strtolower(string: $_ENV['MAPEPIRE_VERIFY_HOSTNAME']) == 'true'
-            : DaemonServer::DEFAULT_VERIFY_HOSTNAME,
+            verifyHostCert: array_key_exists(key: 'MAPEPIRE_VERIFY_HOST_CERT', array: $_ENV)
+            ? strtolower(string: $_ENV['MAPEPIRE_VERIFY_HOST_CERT']) == 'true'
+            : DaemonServer::DEFAULT_VERIFY_HOST_CERT,
+            verifyHostName: array_key_exists(key: 'MAPEPIRE_VERIFY_HOST_NAME', array: $_ENV)
+            ? strtolower(string: $_ENV['MAPEPIRE_VERIFY_HOST_NAME']) == 'true'
+            : DaemonServer::DEFAULT_VERIFY_HOST_NAME,
             timeout: array_key_exists(key: 'MAPEPIRE_TIMEOUT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_TIMEOUT'] : DaemonServer::DEFAULT_TIMEOUT,
             framesize: array_key_exists(key: 'MAPEPIRE_FRAMESIZE', array: $_ENV) ? (int) $_ENV['MAPEPIRE_FRAMESIZE'] : DaemonServer::DEFAULT_FRAMESIZE,
             persistent: array_key_exists(key: 'MAPEPIRE_PERSISTENCE', array: $_ENV) ? (int) $_ENV['MAPEPIRE_DEFAULT_PERSISTENCE'] : DaemonServer::DEFAULT_PERSISTENCE
@@ -131,7 +131,7 @@ class SQLJob implements \Stringable
             port: $daemonServer->port,
             user: $daemonServer->user,
             password: $daemonServer->password,
-            ignoreUnauthorized: $daemonServer->ignoreUnauthorized,
+            verifyHostCert: $daemonServer->verifyHostCert,
             verifyHostName: $daemonServer->verifyHostName,
             timeout: $daemonServer->timeout,
             framesize: $daemonServer->framesize,
@@ -163,7 +163,7 @@ class SQLJob implements \Stringable
         string $message,
         ?array $sslContext = null,
     ): \WebSocket\Message\Text {
-        $sslContext = $sslContext ?: ["verify_peer" => !$this->ignoreUnauthorized, "verify_peer_name" => $this->verifyHostName,];
+        $sslContext = $sslContext ?: ["verify_peer" => $this->verifyHostCert, "verify_peer_name" => $this->verifyHostName,];
         $this->websocket_client->setContext(context: ["ssl" => $sslContext]);
         $this->websocket_client->text(message: $message);
         return $this->websocket_client->receive();
@@ -281,19 +281,19 @@ class SQLJob implements \Stringable
     }
 
     /**
-     * Get the value of ignoreUnauthorized
+     * Get the value of verifyHostCert
      */
-    public function isIgnoreUnauthorized(): bool
+    public function isVerifyHostCert(): bool
     {
-        return $this->ignoreUnauthorized;
+        return $this->verifyHostCert;
     }
 
     /**
-     * Set the value of ignoreUnauthorized
+     * Set the value of verifyHostCert
      */
-    public function setIgnoreUnauthorized(bool $ignoreUnauthorized): self
+    public function setVerifyHostCert(bool $verifyHostCert): self
     {
-        $this->ignoreUnauthorized = $ignoreUnauthorized;
+        $this->verifyHostCert = $verifyHostCert;
 
         return $this;
     }
@@ -426,10 +426,10 @@ class SQLJob implements \Stringable
      */
     private ?string $password = null;
     /**
-     * ignoreUnauthorized .IFF. true accept snakeoil cert
+     * verifyHostCert .IFF. false accept snakeoil cert
      * @var bool
      */
-    private ?bool $ignoreUnauthorized = false;
+    private ?bool $verifyHostCert = true;
     /**
      * verifyHostName .IFF. true
      * @var ?bool
