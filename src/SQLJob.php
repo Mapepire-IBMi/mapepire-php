@@ -10,8 +10,6 @@
 
 namespace Mapepire;
 
-require_once 'vendor/autoload.php';
-
 /**
  * SQLJob is a client to the Mapepire Server
  * @see https://mapepire-ibmi.github.io/
