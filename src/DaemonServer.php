@@ -10,8 +10,6 @@
 
 namespace Mapepire;
 
-require_once 'vendor/autoload.php';
-
 /**
  * DaemonServer structure represents factors to initialize a SQLJob instance.
  */
