@@ -13,7 +13,7 @@ namespace Mapepire;
 /**
  * DaemonServer structure represents factors to initialize a SQLJob instance.
  */
-class DaemonServer implements \Stringable
+class DaemonServer
 {
     const DEFAULT_HOST_NAME = 'localhost';
     const DEFAULT_PORT = 8076;
@@ -27,55 +27,55 @@ class DaemonServer implements \Stringable
      * DNS or IP of Mapepire server
      * @var ?string
      */
-    public ?string $host;
+    private ?string $host;
 
     /**
      * port number of Mapepire host
      * @var ?int
      */
-    public ?int $port;
+    private ?int $port;
 
     /**
      * User profile for IBM i Db2
      * @var ?string
      */
-    public ?string $user;
+    private ?string $user;
 
     /**
      * Password for IBM i Db2
      * @var ?string
      */
-    public ?string $password;
+    private ?string $password;
 
     /**
      * verifyHostCert .IFF. false accept snakeoil cert
      * @var bool
      */
-    public ?bool $verifyHostCert;
+    private ?bool $verifyHostCert;
 
     /**
      * verifyHostName .IFF. true
      * @var ?bool
      */
-    public ?bool $verifyHostName;
+    private ?bool $verifyHostName;
 
     /**
      * Connection timeout
      * @var ?int
      */
-    public ?int $timeout; // default 60 seconds
+    private ?int $timeout; // default 60 seconds
 
     /**
      * Communication frame size
      * @var ?int
      */
-    public ?int $framesize; // default 4096 bytes
+    private ?int $framesize; // default 4096 bytes
 
     /**
      * Should attempt connection persistent
      * @var ?bool
      */
-    public ?bool $persistent;    // If client should attempt persistent connection
+    private ?bool $persistent;    // If client should attempt persistent connection
 
     /**
      * Summary of __construct
@@ -108,71 +108,93 @@ class DaemonServer implements \Stringable
         $this->persistent = $persistent;
     }
 
-    /**
-     * @override
-     * @return string String representation of DaemonServer instance
-     */
-    public function __toString(): string
+    public function getHost(): ?string
     {
-        $result = "Mapepire\DaemonServer" . PHP_EOL
-            . "host: $this->host" . PHP_EOL
-            . "port: $this->port" . PHP_EOL
-            . "user: $this->user" . PHP_EOL
-            . "password: " . ($this->password ? "(hidden)" : "(no password was provided)") . PHP_EOL
-            . "verifyHostCert: $this->verifyHostCert" . PHP_EOL
-            . "verifyHostName: $this->verifyHostName" . PHP_EOL
-            . "timeout: $this->timeout" . PHP_EOL
-            . "framesize: $this->framesize" . PHP_EOL
-            . "persistent: $this->persistent" . PHP_EOL
-        ;
-        return $result;
+        return $this->host;
     }
 
-    /**
-     * Load the .env file if any
-     * @param string $dir Directory .env file found in, default '.'
-     * @return object the dotenv object
-     */
-    public static function loadDotEnv(string $dir = '.'): object
+    public function setHost(?string $host): void
     {
-        $dotenv = \Dotenv\Dotenv::createImmutable(paths: $dir);
-        $dotenv->safeLoad();
-        return $dotenv;
+        $this->host = $host;
     }
 
-    /**
-     * Instance a DaemonServer structure from a .env file.
-     * - Loads the dotenv object.
-     * - Chooses defaults if the variables do not appear in the $_ENV.
-     *   - MAPEPIRE_SERVER localhost
-     *   - MAPEPIRE_PORT 8076
-     *   - MAPEPIRE_VERIFY_HOST_CERT true
-     *   - MAPEPIRE_VERIFY_HOST_NAME true
-     * No defaults for
-     * - MAPEPIRE_DB_USER
-     * - MAPEPIRE_DB_PASS
-     * See the .env.sample in the root of the project
-     * @param string $dir directory containing the .env file (if any such file)
-     * @return DaemonServer instance
-     */
-    public static function DaemonServerFromDotEnv(string $dir = '.'): DaemonServer
+    public function getPort(): ?int
     {
-        self::loadDotEnv(dir: $dir);
-        $DaemonServer = new DaemonServer(
-            host: array_key_exists(key: 'MAPEPIRE_SERVER', array: $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : self::DEFAULT_HOST_NAME,
-            port: array_key_exists(key: 'MAPEPIRE_PORT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_PORT'] : self::DEFAULT_PORT,
-            user: $_ENV['MAPEPIRE_DB_USER'],
-            password: $_ENV['MAPEPIRE_DB_PASS'],
-            verifyHostCert: array_key_exists(key: 'MAPEPIRE_VERIFY_HOST_CERT', array: $_ENV)
-            ? strtolower(string: $_ENV['MAPEPIRE_VERIFY_HOST_CERT']) == 'true'
-            : self::DEFAULT_VERIFY_HOST_CERT,
-            verifyHostName: array_key_exists(key: 'MAPEPIRE_VERIFY_HOST_NAME', array: $_ENV)
-            ? strtolower(string: $_ENV['MAPEPIRE_VERIFY_HOST_NAME']) == 'true'
-            : self::DEFAULT_VERIFY_HOST_NAME,
-            timeout: array_key_exists(key: 'MAPEPIRE_TIMEOUT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_TIMEOUT'] : self::DEFAULT_TIMEOUT,
-            framesize: array_key_exists(key: 'MAPEPIRE_FRAMESIZE', array: $_ENV) ? (int) $_ENV['MAPEPIRE_FRAMESIZE'] : self::DEFAULT_FRAMESIZE,
-            persistent: array_key_exists(key: 'MAPEPIRE_PERSISTENCE', array: $_ENV) ? (int) $_ENV['MAPEPIRE_DEFAULT_PERSISTENCE'] : self::DEFAULT_PERSISTENCE
-        );
-        return $DaemonServer;
+        return $this->port;
+    }
+
+    public function setPort(?int $port): void
+    {
+        $this->port = $port;
+    }
+
+    public function getUser(): ?string
+    {
+        return $this->user;
+    }
+
+    public function setUser(?string $user): void
+    {
+        $this->user = $user;
+    }
+
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(?string $password): void
+    {
+        $this->password = $password;
+    }
+
+    public function getVerifyHostCert(): ?bool
+    {
+        return $this->verifyHostCert;
+    }
+
+    public function setVerifyHostCert(?bool $verifyHostCert): void
+    {
+        $this->verifyHostCert = $verifyHostCert;
+    }
+
+    public function getVerifyHostName(): ?bool
+    {
+        return $this->verifyHostName;
+    }
+
+    public function setVerifyHostName(?bool $verifyHostName): void
+    {
+        $this->verifyHostName = $verifyHostName;
+    }
+
+    public function getTimeout(): ?int
+    {
+        return $this->timeout;
+    }
+
+    public function setTimeout(?int $timeout): void
+    {
+        $this->timeout = $timeout;
+    }
+
+    public function getFramesize(): ?int
+    {
+        return $this->framesize;
+    }
+
+    public function setFramesize(?int $framesize): void
+    {
+        $this->framesize = $framesize;
+    }
+
+    public function getPersistent(): ?bool
+    {
+        return $this->persistent;
+    }
+
+    public function setPersistent(?bool $persistent): void
+    {
+        $this->persistent = $persistent;
     }
 }

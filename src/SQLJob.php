@@ -10,7 +10,9 @@
 
 namespace Mapepire;
 
+use Phrity\Net\Uri;
 use WebSocket\Client;
+use WebSocket\Message\Message;
 use WebSocket\Middleware\CloseHandler;
 use WebSocket\Middleware\PingResponder;
 
@@ -19,109 +21,21 @@ use WebSocket\Middleware\PingResponder;
  * @see https://mapepire-ibmi.github.io/
  * @see https://github.com/Mapepire-IBMi/mapepire-server
  */
-class SQLJob implements \Stringable
+class SQLJob
 {
+    private Client $client;
+    private DaemonServer $server;
+
     public function connect(DaemonServer $server): void
     {
-        $this->websocket_client = new Client(uri: $this->genURI());
-        $this->websocket_client->addHeader(name: "Authorization", content: "Basic " . $this->encodeCredentials($server->getUsername(), $server->getPassword()));
-        $this->websocket_client->addMiddleware(middleware: new CloseHandler());
-        $this->websocket_client->addMiddleware(middleware: new PingResponder());
+        $this->server = $server;
+        $this->client = new Client($this->genURI($server->getHost(), $server->getPort()));
+        $this->client->addHeader("Authorization", "Basic " . self::credentialEncoder($server->getUser(), $server->getPassword()));
+        $this->client->addMiddleware(new CloseHandler());
+        $this->client->addMiddleware(new PingResponder());
 //        $this->websocket_client->setTimeout = $this->timeout;
 //        $this->websocket_client->setFrameSize = $this->framesize;
 //        $this->websocket_client->setPersistent = $this->persistent;
-    }
-
-    /**
-     * @override
-     * @return string String representation of SQLJob instance
-     */
-    public function __toString(): string
-    {
-        $result = "Mapepire\SQLJob" . PHP_EOL
-            . "host: $this->host" . PHP_EOL
-            . "port: $this->port" . PHP_EOL
-            . "user: $this->user" . PHP_EOL
-            . "verifyHostCert: $this->verifyHostCert" . PHP_EOL
-            . "verifyHostName: $this->verifyHostName" . PHP_EOL
-            . "timeout: $this->timeout" . PHP_EOL
-            . "framesize: $this->framesize" . PHP_EOL
-            . "persistent: $this->persistent" . PHP_EOL
-            . "Websocket\Client: $this->websocket_client" . PHP_EOL
-        ;
-        return $result;
-    }
-
-    /**
-     * Instance a SQLJob from environment variables, typically a .env file.
-     * Loads the dotenv object and stores it in the created instance.
-     * Chooses defaults if the variables do not appear in the $_ENV.
-     * All the defaults appear as constants in Mapepire\DaemonServer.
-     *   - MAPEPIRE_host localhost
-     *   - MAPEPIRE_PORT 8076
-     *   - MAPEPIRE_VERIFY_HOST_CERT true
-     *   - MAPEPIRE_VERIFY_HOST_NAME true
-     *   - MAPEPIRE_TIMEOUT 60 seconds
-     *   - MAPEPIRE_FRAMESIZE 4096
-     *   - MAPEPIRE_PERSISTENCE true
-     * No defaults for
-     *   - MAPEPIRE_DB_USER
-     *   - MAPEPIRE_DB_PASS
-     * See the .env.sample in the root of the project
-     * @param string $dir directory containing the .env file (if any such file)
-     * @return SQLJob instance
-     */
-    public static function SQLJobFromDotEnv(string $dir = '.'): SQLJob
-    {
-        $dotenv = SQLJob::loadEnv(dir: $dir);
-        $sqlJob = new SQLJob(
-            host: array_key_exists(key: 'MAPEPIRE_SERVER', array: $_ENV) ? $_ENV['MAPEPIRE_SERVER'] : DaemonServer::DEFAULT_HOST_NAME,
-            port: array_key_exists(key: 'MAPEPIRE_PORT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_PORT'] : DaemonServer::DEFAULT_PORT,
-            user: $_ENV['MAPEPIRE_DB_USER'],
-            password: $_ENV['MAPEPIRE_DB_PASS'],
-            verifyHostCert: array_key_exists(key: 'MAPEPIRE_VERIFY_HOST_CERT', array: $_ENV)
-            ? strtolower(string: $_ENV['MAPEPIRE_VERIFY_HOST_CERT']) == 'true'
-            : DaemonServer::DEFAULT_VERIFY_HOST_CERT,
-            verifyHostName: array_key_exists(key: 'MAPEPIRE_VERIFY_HOST_NAME', array: $_ENV)
-            ? strtolower(string: $_ENV['MAPEPIRE_VERIFY_HOST_NAME']) == 'true'
-            : DaemonServer::DEFAULT_VERIFY_HOST_NAME,
-            timeout: array_key_exists(key: 'MAPEPIRE_TIMEOUT', array: $_ENV) ? (int) $_ENV['MAPEPIRE_TIMEOUT'] : DaemonServer::DEFAULT_TIMEOUT,
-            framesize: array_key_exists(key: 'MAPEPIRE_FRAMESIZE', array: $_ENV) ? (int) $_ENV['MAPEPIRE_FRAMESIZE'] : DaemonServer::DEFAULT_FRAMESIZE,
-            persistent: array_key_exists(key: 'MAPEPIRE_PERSISTENCE', array: $_ENV) ? (int) $_ENV['MAPEPIRE_DEFAULT_PERSISTENCE'] : DaemonServer::DEFAULT_PERSISTENCE
-        );
-        $sqlJob->dotenv = $dotenv;
-        return $sqlJob;
-    }
-
-    /**
-     * Instance a SQLJob from a DaemonServer instance
-     */
-    public static function SQLJobFromDaemonServer(DaemonServer $daemonServer): SQLJob
-    {
-        $SQLJob = new SQLJob(
-            host: $daemonServer->host,
-            port: $daemonServer->port,
-            user: $daemonServer->user,
-            password: $daemonServer->password,
-            verifyHostCert: $daemonServer->verifyHostCert,
-            verifyHostName: $daemonServer->verifyHostName,
-            timeout: $daemonServer->timeout,
-            framesize: $daemonServer->framesize,
-            persistent: $daemonServer->persistent
-        );
-        return $SQLJob;
-    }
-
-    /**
-     * Load the .env file if any
-     * @param string $dir Directory .env file found in, default '.'
-     * @return object the dotenv object
-     */
-    public static function loadEnv(string $dir = '.'): object
-    {
-        $dotenv = \Dotenv\Dotenv::createImmutable(paths: $dir);
-        $dotenv->safeLoad();
-        return $dotenv;
     }
 
     /**
@@ -131,14 +45,15 @@ class SQLJob implements \Stringable
      * @param mixed $sslContext the specific SSL Context. If none, uses the context created by ctor.
      * @return \WebSocket\Message\Text the response text object .. ->getContent() to get the JSON message content
      */
-    public function singleSendAndReceive(
-        string $message,
-        ?array $sslContext = null,
-    ): \WebSocket\Message\Text {
-        $sslContext = $sslContext ?: ["verify_peer" => $this->verifyHostCert, "verify_peer_name" => $this->verifyHostName,];
-        $this->websocket_client->setContext(context: ["ssl" => $sslContext]);
-        $this->websocket_client->text(message: $message);
-        return $this->websocket_client->receive();
+    public function singleSendAndReceive(string $message, ?array $sslContext = null): Message
+    {
+        $sslContext = $sslContext ?: [
+            "verify_peer" => $this->server->getVerifyHostCert(),
+            "verify_peer_name" => $this->server->getVerifyHostName(),
+        ];
+        $this->client->setContext(["ssl" => $sslContext]);
+        $this->client->text($message);
+        return $this->client->receive();
     }
 
     /**
@@ -147,17 +62,17 @@ class SQLJob implements \Stringable
      */
     public function close(): void
     {
-        $this->websocket_client->close();
+        $this->client->close();
     }
 
     /**
      * Formulate the URI for the connection
      * @return string the uri
      */
-    private function genURI(): \Phrity\Net\Uri
+    private function genURI(string $host, int $port): Uri
     {
-        $uri_string = "wss://$this->host:" . (string) $this->port . "/db/";
-        return new \Phrity\Net\Uri(uri_string: $uri_string);
+        $uri_string = "wss://$host:$port/db/";
+        return new Uri($uri_string);
     }
 
     /**
@@ -168,269 +83,6 @@ class SQLJob implements \Stringable
      */
     public static function credentialEncoder(string $user, string $password): string
     {
-        return base64_encode(string: "$user:$password");
+        return base64_encode("$user:$password");
     }
-
-    /**
-     * Encode specific credentials stored in this.
-     * @return string encoded creds
-     */
-    private function encodeCredentials(): string
-    {
-        return self::credentialEncoder(user: $this->user, password: $this->password);
-    }
-
-    /**
-     * Get the value of host
-     */
-    public function getHost(): ?string
-    {
-        return $this->host;
-    }
-
-    /**
-     * Set the value of host
-     */
-    public function setHost(?string $host): self
-    {
-        $this->host = $host;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of port
-     */
-    public function getPort(): ?int
-    {
-        return $this->port;
-    }
-
-    /**
-     * Set the value of port
-     */
-    public function setPort(?int $port): self
-    {
-        $this->port = $port;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of user
-     */
-    public function getUser(): ?string
-    {
-        return $this->user;
-    }
-
-    /**
-     * Set the value of user
-     */
-    public function setUser(?string $user): self
-    {
-        $this->user = $user;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of password
-     */
-    public function getPassword(): ?string
-    {
-        return $this->password;
-    }
-
-    /**
-     * Set the value of password
-     */
-    public function setPassword(?string $password): self
-    {
-        $this->password = $password;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of verifyHostCert
-     */
-    public function isVerifyHostCert(): bool
-    {
-        return $this->verifyHostCert;
-    }
-
-    /**
-     * Set the value of verifyHostCert
-     */
-    public function setVerifyHostCert(bool $verifyHostCert): self
-    {
-        $this->verifyHostCert = $verifyHostCert;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of dotenv
-     */
-    public function getDotenv(): ?object
-    {
-        return $this->dotenv;
-    }
-
-    /**
-     * Set the value of dotenv
-     */
-    public function setDotenv(?object $dotenv): self
-    {
-        $this->dotenv = $dotenv;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of websocket_client
-     */
-    public function getWebsocketClient(): ?Client
-    {
-        return $this->websocket_client;
-    }
-
-    /**
-     * Set the value of websocket_client
-     */
-    public function setWebsocketClient(?Client $websocket_client): self
-    {
-        $this->websocket_client = $websocket_client;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of verifyHostName
-     */
-    public function isVerifyHostName(): bool
-    {
-        return $this->verifyHostName;
-    }
-
-    /**
-     * Set the value of verifyHostName
-     */
-    public function setVerifyHostName(bool $verifyHostName): self
-    {
-        $this->verifyHostName = $verifyHostName;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of timeout
-     */
-    public function getTimeout(): ?int
-    {
-        return $this->timeout;
-    }
-
-    /**
-     * Set the value of timeout
-     */
-    public function setTimeout(?int $timeout): self
-    {
-        $this->timeout = $timeout;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of framesize
-     */
-    public function getFramesize(): ?int
-    {
-        return $this->framesize;
-    }
-
-    /**
-     * Set the value of framesize
-     */
-    public function setFramesize(?int $framesize): self
-    {
-        $this->framesize = $framesize;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of persistent
-     */
-    public function isPersistent(): ?bool
-    {
-        return $this->persistent;
-    }
-
-    /**
-     * Set the value of persistent
-     */
-    public function setPersistent(?bool $persistent): self
-    {
-        $this->persistent = $persistent;
-
-        return $this;
-    }
-    /**
-     * DNS or IP of Mapepire server
-     * @var ?string
-     */
-    protected ?string $host = null;
-    /**
-     * port number of Mapepire host
-     * @var ?int
-     */
-    protected ?int $port = null;
-    /**
-     * User profile for IBM i Db2
-     * @var ?string
-     */
-    protected ?string $user = null;
-    /**
-     * Password for IBM i Db2
-     * @var ?string
-     */
-    private ?string $password = null;
-    /**
-     * verifyHostCert .IFF. false accept snakeoil cert
-     * @var bool
-     */
-    private ?bool $verifyHostCert = true;
-    /**
-     * verifyHostName .IFF. true
-     * @var ?bool
-     */
-    private ?bool $verifyHostName = true;
-    /**
-     * Connection timeout
-     * @var ?int
-     */
-    private ?int $timeout; // default 60 seconds
-    /**
-     * Communication frame size
-     * @var ?int
-     */
-    private ?int $framesize; // default 4096 bytes
-    /**
-     * Should attempt connection persistent
-     * @var ?bool
-     */
-    private ?bool $persistent;    // If client should attempt persistent connection
-    /**
-     * dotenv object if any
-     * @var ?object
-     */
-    private ?object $dotenv = null;
-    /**
-     * The connection object
-     * @var $websocket_client
-     */
-    private ?Client $websocket_client = null;
-
 }
