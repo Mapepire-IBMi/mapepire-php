@@ -10,6 +10,10 @@
 
 namespace Mapepire;
 
+use WebSocket\Client;
+use WebSocket\Middleware\CloseHandler;
+use WebSocket\Middleware\PingResponder;
+
 /**
  * SQLJob is a client to the Mapepire Server
  * @see https://mapepire-ibmi.github.io/
@@ -17,45 +21,15 @@ namespace Mapepire;
  */
 class SQLJob implements \Stringable
 {
-    /**
-     * Ctor, all defaults identified as constants in \Mapepire\DaemonServer
-     * @param string $host mapepire host dns or ipaddr
-     * @param int $port mapepire host port
-     * @param string $user user for authorization to IBM i Db2
-     * @param string $password password for authorization to IBM i Db2
-     * @param bool $verifyHostCert .IFF. false allow snakeoil cert
-     * @param bool $verifyHostName .IFF. true verify hostname
-     * @param int $timeout timeout in seconds
-     * @param int $framesize frame size
-     * @param bool $persistent try for persistent connection .IFF. true
-     */
-    public function __construct(
-        string $host = DaemonServer::DEFAULT_HOST_NAME,
-        int $port = DaemonServer::DEFAULT_PORT,
-        string $user = null,
-        string $password = null,
-        bool $verifyHostCert = DaemonServer::DEFAULT_VERIFY_HOST_CERT,
-        bool $verifyHostName = DaemonServer::DEFAULT_VERIFY_HOST_NAME,
-        int $timeout = DaemonServer::DEFAULT_TIMEOUT,
-        int $framesize = DaemonServer::DEFAULT_FRAMESIZE,
-        bool $persistent = DaemonServer::DEFAULT_PERSISTENCE
-    ) {
-        $this->host = $host;
-        $this->port = $port;
-        $this->user = $user;
-        $this->password = $password;
-        $this->verifyHostCert = $verifyHostCert;
-        $this->verifyHostName = $verifyHostName;
-        $this->timeout = $timeout;
-        $this->framesize = $framesize;
-        $this->persistent = $persistent;
-        $this->websocket_client = new \WebSocket\Client(uri: $this->genURI());
-        $this->websocket_client->addHeader(name: "Authorization", content: "Basic " . $this->encodeCredentials());
-        $this->websocket_client->addMiddleware(middleware: new \WebSocket\Middleware\CloseHandler());
-        $this->websocket_client->addMiddleware(middleware: new \WebSocket\Middleware\PingResponder());
-        $this->websocket_client->setTimeout = $this->timeout;
-        $this->websocket_client->setFrameSize = $this->framesize;
-        $this->websocket_client->setPersistent = $this->persistent;
+    public function connect(DaemonServer $server): void
+    {
+        $this->websocket_client = new Client(uri: $this->genURI());
+        $this->websocket_client->addHeader(name: "Authorization", content: "Basic " . $this->encodeCredentials($server->getUsername(), $server->getPassword()));
+        $this->websocket_client->addMiddleware(middleware: new CloseHandler());
+        $this->websocket_client->addMiddleware(middleware: new PingResponder());
+//        $this->websocket_client->setTimeout = $this->timeout;
+//        $this->websocket_client->setFrameSize = $this->framesize;
+//        $this->websocket_client->setPersistent = $this->persistent;
     }
 
     /**
@@ -317,7 +291,7 @@ class SQLJob implements \Stringable
     /**
      * Get the value of websocket_client
      */
-    public function getWebsocketClient(): ?\WebSocket\Client
+    public function getWebsocketClient(): ?Client
     {
         return $this->websocket_client;
     }
@@ -325,7 +299,7 @@ class SQLJob implements \Stringable
     /**
      * Set the value of websocket_client
      */
-    public function setWebsocketClient(?\WebSocket\Client $websocket_client): self
+    public function setWebsocketClient(?Client $websocket_client): self
     {
         $this->websocket_client = $websocket_client;
 
@@ -457,6 +431,6 @@ class SQLJob implements \Stringable
      * The connection object
      * @var $websocket_client
      */
-    private ?\WebSocket\Client $websocket_client = null;
+    private ?Client $websocket_client = null;
 
 }
