@@ -29,7 +29,7 @@ class SQLJob
     public function connect(DaemonServer $server): void
     {
         $this->server = $server;
-        $this->client = new Client($this->genURI($server->getHost(), $server->getPort()));
+        $this->client = new Client(new Uri("wss://{$server->getHost()}:{$server->getPort()}/db/"));
         $this->client->addHeader("Authorization", "Basic " . self::credentialEncoder($server->getUser(), $server->getPassword()));
         $this->client->addMiddleware(new CloseHandler());
         $this->client->addMiddleware(new PingResponder());
@@ -63,16 +63,6 @@ class SQLJob
     public function close(): void
     {
         $this->client->close();
-    }
-
-    /**
-     * Formulate the URI for the connection
-     * @return string the uri
-     */
-    private function genURI(string $host, int $port): Uri
-    {
-        $uri_string = "wss://$host:$port/db/";
-        return new Uri($uri_string);
     }
 
     /**
