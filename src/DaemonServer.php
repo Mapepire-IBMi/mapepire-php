@@ -26,17 +26,17 @@ class DaemonServer implements \Stringable
     /**
      * Summary of __construct
      * @param string $host Mapepire server host
-     * @param int $port Mapepire server port
      * @param string $user Userid to authorize on Mapepire server
      * @param string $password Password to authorize on Mapepire server
+     * @param int $port Mapepire server port
      * @param bool $verifyHostCert .IFF. false accept self-signed, default true
      * @param bool $verifyHostName .IFF. true verify the host name
      */
     public function __construct(
         string $host = self::DEFAULT_HOST_NAME,
-        int $port = self::DEFAULT_PORT,
         string $user = null,
         string $password = null,
+        int $port = self::DEFAULT_PORT,
         bool $verifyHostCert = self::DEFAULT_VERIFY_HOST_CERT,
         bool $verifyHostName = self::DEFAULT_VERIFY_HOST_NAME,
         int $timeout = self::DEFAULT_TIMEOUT,
