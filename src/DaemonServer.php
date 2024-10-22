@@ -24,6 +24,60 @@ class DaemonServer implements \Stringable
     const DEFAULT_PERSISTENCE = false;
 
     /**
+     * DNS or IP of Mapepire server
+     * @var ?string
+     */
+    public ?string $host;
+
+    /**
+     * port number of Mapepire host
+     * @var ?int
+     */
+    public ?int $port;
+
+    /**
+     * User profile for IBM i Db2
+     * @var ?string
+     */
+    public ?string $user;
+
+    /**
+     * Password for IBM i Db2
+     * @var ?string
+     */
+    public ?string $password;
+
+    /**
+     * verifyHostCert .IFF. false accept snakeoil cert
+     * @var bool
+     */
+    public ?bool $verifyHostCert;
+
+    /**
+     * verifyHostName .IFF. true
+     * @var ?bool
+     */
+    public ?bool $verifyHostName;
+
+    /**
+     * Connection timeout
+     * @var ?int
+     */
+    public ?int $timeout; // default 60 seconds
+
+    /**
+     * Communication frame size
+     * @var ?int
+     */
+    public ?int $framesize; // default 4096 bytes
+
+    /**
+     * Should attempt connection persistent
+     * @var ?bool
+     */
+    public ?bool $persistent;    // If client should attempt persistent connection
+
+    /**
      * Summary of __construct
      * @param string $host Mapepire server host
      * @param string $user Userid to authorize on Mapepire server
@@ -121,49 +175,4 @@ class DaemonServer implements \Stringable
         );
         return $DaemonServer;
     }
-    /**
-     * DNS or IP of Mapepire server
-     * @var ?string
-     */
-    public ?string $host;
-    /**
-     * port number of Mapepire host
-     * @var ?int
-     */
-    public ?int $port;
-    /**
-     * User profile for IBM i Db2
-     * @var ?string
-     */
-    public ?string $user;
-    /**
-     * Password for IBM i Db2
-     * @var ?string
-     */
-    public ?string $password;
-    /**
-     * verifyHostCert .IFF. false accept snakeoil cert
-     * @var bool
-     */
-    public ?bool $verifyHostCert;
-    /**
-     * verifyHostName .IFF. true
-     * @var ?bool
-     */
-    public ?bool $verifyHostName;
-    /**
-     * Connection timeout
-     * @var ?int
-     */
-    public ?int $timeout; // default 60 seconds
-    /**
-     * Communication frame size
-     * @var ?int
-     */
-    public ?int $framesize; // default 4096 bytes
-    /**
-     * Should attempt connection persistent
-     * @var ?bool
-     */
-    public ?bool $persistent;    // If client should attempt persistent connection
 }
