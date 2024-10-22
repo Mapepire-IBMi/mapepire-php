@@ -33,9 +33,9 @@ class SQLJob
         $this->client->addHeader("Authorization", "Basic " . self::credentialEncoder($server->getUser(), $server->getPassword()));
         $this->client->addMiddleware(new CloseHandler());
         $this->client->addMiddleware(new PingResponder());
-//        $this->websocket_client->setTimeout = $this->timeout;
-//        $this->websocket_client->setFrameSize = $this->framesize;
-//        $this->websocket_client->setPersistent = $this->persistent;
+        $this->client->setTimeout($server->getTimeout());
+        $this->client->setFrameSize($server->getFrameSize());
+        $this->client->setPersistent($server->getPersistent());
     }
 
     /**
