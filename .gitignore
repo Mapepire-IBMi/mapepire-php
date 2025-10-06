@@ -1,6 +1,14 @@
+# from running Composer
+
 /.phpdoc/
 /doc/
 /build
 /vendor
 /.phpunit.result.cache
 **/.env
+
+#local tests
+_test*
+
+#development files
+*.ini

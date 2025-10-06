@@ -1,200 +1,105 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright 2024 IBM
  * All Rights Reserved
  * Apache License 2.0 ... see LICENSE file
- * Author: Jack J. Woehr
- * jwoehr@softwoehr.com
+ * 
+ * Original Author: Jack J. Woehr <jwoehr@softwoehr.com>
+ * Modified By: Matthew Wiltzius <matthew.wiltzius@ibm.com>
  */
 
 namespace Mapepire;
 
-/**
- * DaemonServer structure represents factors to initialize a SQLJob instance.
- */
-class DaemonServer
+final class DaemonServer
 {
-    const DEFAULT_HOST_NAME = 'localhost';
-    const DEFAULT_PORT = 8076;
-    const DEFAULT_VERIFY_HOST_CERT = true;
-    const DEFAULT_VERIFY_HOST_NAME = true;
-    const DEFAULT_TIMEOUT = 60;
-    const DEFAULT_FRAMESIZE = 4096;
-    const DEFAULT_PERSISTENCE = false;
-
-    /**
-     * DNS or IP of Mapepire server
-     * @var ?string
-     */
-    private ?string $host;
-
-    /**
-     * port number of Mapepire host
-     * @var ?int
-     */
-    private ?int $port;
-
-    /**
-     * User profile for IBM i Db2
-     * @var ?string
-     */
-    private ?string $user;
-
-    /**
-     * Password for IBM i Db2
-     * @var ?string
-     */
-    private ?string $password;
-
-    /**
-     * verifyHostCert .IFF. false accept snakeoil cert
-     * @var bool
-     */
-    private ?bool $verifyHostCert;
-
-    /**
-     * verifyHostName .IFF. true
-     * @var ?bool
-     */
-    private ?bool $verifyHostName;
-
-    /**
-     * Connection timeout
-     * @var ?int
-     */
-    private ?int $timeout; // default 60 seconds
-
-    /**
-     * Communication frame size
-     * @var ?int
-     */
-    private ?int $framesize; // default 4096 bytes
-
-    /**
-     * Should attempt connection persistent
-     * @var ?bool
-     */
-    private ?bool $persistent;    // If client should attempt persistent connection
-
-    /**
-     * Summary of __construct
-     * @param string $host Mapepire server host
-     * @param string $user Userid to authorize on Mapepire server
-     * @param string $password Password to authorize on Mapepire server
-     * @param int $port Mapepire server port
-     * @param bool $verifyHostCert .IFF. false accept self-signed, default true
-     * @param bool $verifyHostName .IFF. true verify the host name
-     */
     public function __construct(
-        string $host = self::DEFAULT_HOST_NAME,
-        string $user = null,
-        string $password = null,
-        int $port = self::DEFAULT_PORT,
-        bool $verifyHostCert = self::DEFAULT_VERIFY_HOST_CERT,
-        bool $verifyHostName = self::DEFAULT_VERIFY_HOST_NAME,
-        int $timeout = self::DEFAULT_TIMEOUT,
-        int $framesize = self::DEFAULT_FRAMESIZE,
-        bool $persistent = self::DEFAULT_PERSISTENCE
+        public readonly string  $host,
+        public readonly string  $user,
+        public readonly string  $password,
+        public readonly int     $port = 8076,
+        public readonly bool    $ignoreUnauthorized = false,
+        public readonly ?string $ca = null,
     ) {
-        $this->host = $host;
-        $this->port = $port;
-        $this->user = $user;
-        $this->password = $password;
-        $this->verifyHostCert = $verifyHostCert;
-        $this->verifyHostName = $verifyHostName;
-        $this->timeout = $timeout;
-        $this->framesize = $framesize;
-        $this->persistent = $persistent;
+        // Basic validation
+        if ($this->host === '') {
+            throw new \InvalidArgumentException('host must be a non-empty string.');
+        }
+        if ($this->user === '') {
+            throw new \InvalidArgumentException('user must be a non-empty string.');
+        }
+        if ($this->password === '') {
+            throw new \InvalidArgumentException('password must be a non-empty string.');
+        }
+        if ($this->port < 1 || $this->port > 65535) {
+            throw new \InvalidArgumentException('port must be between 1 and 65535.');
+        }
+        if (is_string($this->ca) && $this->ca !== '' && !is_readable($this->ca)) {
+            throw new \InvalidArgumentException("CA file is not readable: {$this->ca}");
+        }
     }
 
-    public function getHost(): ?string
+    /**
+     * Create a new DaemonServer object from an associative array
+     * @param array $data - associate array containing:
+     *                            host (string, required)
+     *                            user (string, required)
+     *                            password (string, required)
+     *                            port (int, optional)
+     *                            ignoreUnauthorized (bool, optional)
+     *                            ca (string, optional)
+     * @return self - A new DaemonServer object
+     */
+    public static function fromArray(array $data): self
     {
-        return $this->host;
+        if (!isset($data['host'], $data['user'], $data['password']))
+            throw new \InvalidArgumentException("host, user, and password are required keys.");
+
+        return new self(
+            host:               (string) $data['host'],
+            user:               (string) $data['user'],
+            password:           (string) $data['password'],
+            port:               array_key_exists('port', $data) ? (int) $data['port'] : 8076,
+            ignoreUnauthorized: array_key_exists('ignoreUnauthorized', $data) ? (bool) $data['ignoreUnauthorized'] : false,
+            ca:                 array_key_exists('ca', $data) ? (string) $data['ca'] : null,
+        );
     }
 
-    public function setHost(?string $host): void
+    /**
+     * Create a new DaemonServer object from an INI file
+     * @param string      $path - path to the INI File
+     * @param string|null $section - section of the INI file to use for credentials
+     * @return self - A new DaemonServer object
+     */
+    public static function fromIni(string $path, ?string $section=null): self
     {
-        $this->host = $host;
-    }
+        $all = parse_ini_file($path, true, INI_SCANNER_TYPED);
 
-    public function getPort(): ?int
-    {
-        return $this->port;
-    }
+        if ($all === false || $all === [])
+            throw new \InvalidArgumentException("INI parse failed or is empty: $path");
 
-    public function setPort(?int $port): void
-    {
-        $this->port = $port;
-    }
+        if ($section !== null) {
+            if(!isset($all[$section]))
+                throw new \InvalidArgumentException("Section '$section' not found in INI file.");
+        }
+        else
+            $section = array_key_first($all);
+        $data = $all[$section];
+            
+        if (!isset($data['SERVER'], $data['USER'], $data['PASSWORD']))
+            throw new \InvalidArgumentException("INI must include SERVER, USER, and PASSWORD.");
 
-    public function getUser(): ?string
-    {
-        return $this->user;
-    }
+        $data = array_change_key_case($data, CASE_UPPER);
 
-    public function setUser(?string $user): void
-    {
-        $this->user = $user;
-    }
-
-    public function getPassword(): ?string
-    {
-        return $this->password;
-    }
-
-    public function setPassword(?string $password): void
-    {
-        $this->password = $password;
-    }
-
-    public function getVerifyHostCert(): ?bool
-    {
-        return $this->verifyHostCert;
-    }
-
-    public function setVerifyHostCert(?bool $verifyHostCert): void
-    {
-        $this->verifyHostCert = $verifyHostCert;
-    }
-
-    public function getVerifyHostName(): ?bool
-    {
-        return $this->verifyHostName;
-    }
-
-    public function setVerifyHostName(?bool $verifyHostName): void
-    {
-        $this->verifyHostName = $verifyHostName;
-    }
-
-    public function getTimeout(): ?int
-    {
-        return $this->timeout;
-    }
-
-    public function setTimeout(?int $timeout): void
-    {
-        $this->timeout = $timeout;
-    }
-
-    public function getFramesize(): ?int
-    {
-        return $this->framesize;
-    }
-
-    public function setFramesize(?int $framesize): void
-    {
-        $this->framesize = $framesize;
-    }
-
-    public function getPersistent(): ?bool
-    {
-        return $this->persistent;
-    }
-
-    public function setPersistent(?bool $persistent): void
-    {
-        $this->persistent = $persistent;
+        $ignoreUnauthorized = filter_var($data['IGNOREUNAUTHORIZED'] ?? null, 
+                                         FILTER_VALIDATE_BOOLEAN);
+        return new self(
+            host:               (string) $data['SERVER'],
+            user:               (string) $data['USER'],
+            password:           (string) $data['PASSWORD'],
+            port:               array_key_exists('PORT', $data) ? (int) $data['PORT'] : 8076,
+            ignoreUnauthorized: $ignoreUnauthorized,
+            ca:                 array_key_exists('CA', $data) ? (string) $data['CA'] : null,
+        );
     }
 }
