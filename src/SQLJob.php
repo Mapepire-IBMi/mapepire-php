@@ -31,6 +31,7 @@ class SQLJob
     private static int $uniqueIdCounter = 0;
     private JobStatus  $status = JobStatus::NotStarted;
     private bool       $isTracingChannelData = true;      // TODO: Tracing not yet enabled
+    private string     $uniqueId;
 
     private ?string   $id = null;
 
@@ -49,6 +50,7 @@ class SQLJob
         elseif (is_string($options))
             $section = $options;
 
+        $uniqueId = $this->getNewUniqueId("sqljob");
         if ($creds)
             $this->connect($creds, $section);
     }
@@ -125,7 +127,7 @@ class SQLJob
 
         try {
             $this->send(json_encode($connectionProps));
-            $rawResult = $this->socket->receive()->getContent();
+            $rawResult = $this->receive();
         }
         catch (\Throwable $e) {
             $this->status = JobStatus::NotStarted;
@@ -173,6 +175,12 @@ class SQLJob
         $this->status = JobStatus::Ready;
     }
 
+    public function receive(): string
+    {
+        if (!$this->socket) { throw new \RuntimeException('Socket not connected'); }
+        return $this->socket->receive()->getContent();
+    }
+
     /**
      * Close the websocket connection
      * @return void
@@ -187,13 +195,28 @@ class SQLJob
         }
     }
 
+    public function query(string $sql, ?array $options = null): Query
+    {
+        return new Query($this, $sql, null);
+    }
+
+    public function queryAndRun(string $sql): string
+    {
+        return "Function not implemented: queryAndRun()";
+    }
+
+    public function getStatus(): JobStatus
+    {
+        return $this->status;
+    }
+
     /**
      * base64 encode credentials for Basic Auth
      * @param string $user the user
      * @param string $password the password
      * @return string the encoded creds
      */
-    public static function credentialEncoder(string $user, string $password): string
+    private static function credentialEncoder(string $user, string $password): string
     {
         return base64_encode("$user:$password");
     }
