@@ -64,6 +64,14 @@ class SQLJob
     }
 
     /**
+     * Getter to determine if socket exits
+     */
+    public function getSocket(): ?Client
+    {
+      return $this->socket;
+    }
+
+    /**
      * Generate a new unique id with an optional prefix
      * @param string $prefix - An optional prefix for the unique ID.
      * @return string - A unique ID.
