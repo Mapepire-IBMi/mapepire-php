@@ -33,16 +33,16 @@ class Query
     private int        $rows           = 100;
     private ?string    $correlationId  = null;
 
-    public function __construct(SQLJob $job, string $sql, ?array $options)
+    public function __construct(SQLJob $job, string $sql, ?QueryOptions $options)
     {
         $this->job            = $job;
         $this->sql            = $sql;
 
         $options = $options ?? [];
-        $this->parameters     = $options['parameters'] ?? [];
-        $this->isPrepared     = !empty($options['parameters']);
-        $this->isClCommand    = $options['isClCommand'] ?? false;
-        $this->isTerseResults = $options['isTerseResults'] ?? false;
+        $this->parameters     = $options->parameters ?? [];
+        $this->isPrepared     = !empty($options->parameters);
+        $this->isClCommand    = $options->isClCommand ?? false;
+        $this->isTerseResults = $options->isTerseResults ?? false;
         
         self::$globalQueryList[] = $this;
     }
@@ -86,7 +86,7 @@ class Query
             }
             if (count($errorList) == 0)
                 $errorList['error'] = "failed to run query for unknown reason";
-            throw new \RunetimeException(json_encode($errorList));
+            throw new \RuntimeException(json_encode($errorList));
         }
 
         $isDone = (bool)($results['is_done'] ?? false);
@@ -97,7 +97,7 @@ class Query
         return $results;
     }
 
-    public function run(int $rows = null): array
+    public function run(?int $rows = null): array
     {
         if ($rows == null)
             $rows = $this->rows;
@@ -128,7 +128,7 @@ class Query
                 'parameters' => $this->parameters,
             ];
 
-        $results = executeQuery($queryObject);
+        $results = $this->executeQuery($queryObject);
 
         $success = (bool)($results['success'] ?? false);
         if (!$success && !$this->isClCommand) {
@@ -141,7 +141,7 @@ class Query
             }
             if (count($errorList) == 0)
                 $errorList['error'] = "failed to run query for unknown reason";
-            throw new \RunetimeException(json_encode($errorList));
+            throw new \RuntimeException(json_encode($errorList));
         }
 
         $isDone = (bool)($results['is_done'] ?? false);
@@ -174,12 +174,12 @@ class Query
         ];
 
         $this->rows = $rows;
-        $results = executeQuery($queryObject);
+        $results = $this->executeQuery($queryObject);
 
         $success = (bool)($results['success'] ?? false);
         if (!$success && !$this->isClCommand) {
             $this->state = QueryState::ERROR;
-            throw new \RunetimeException(($results['error'] ?? "Failed to run Query (unknown error)"));
+            throw new \RuntimeException(($results['error'] ?? "Failed to run Query (unknown error)"));
         }
 
         $isDone = (bool)($results['is_done'] ?? false);
@@ -203,5 +203,15 @@ class Query
         }
         elseif (!$this->correlationId)
             $this->state = QueryState::RUN_DONE;
+    }
+
+    public function getId(): string
+    {
+      return $this->correlationId;
+    }
+
+    public function getState(): QueryState
+    {
+      return $this->state;
     }
 }

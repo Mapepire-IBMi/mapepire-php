@@ -203,9 +203,12 @@ class SQLJob
         }
     }
 
-    public function query(string $sql, ?array $options = null): Query
+    public function query(string $sql, QueryOptions|array|null $options = null): Query
     {
-        return new Query($this, $sql, null);
+        if(is_array($options)) {
+            $options = new QueryOptions($options);
+        }
+        return new Query($this, $sql, $options);
     }
 
     public function queryAndRun(string $sql): string
