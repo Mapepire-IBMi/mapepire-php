@@ -10,6 +10,9 @@
 
 namespace Mapepire;
 
+/**
+ * The QueryOptions class configures query execution behavior:
+ */
 final class QueryOptions
 {
     public ?bool  $isTerseResults = null;
@@ -22,9 +25,5 @@ final class QueryOptions
         $this->isClCommand    = isset($data['isClCommand'])    ? (bool)$data['isClCommand']    : null;
         $this->parameters     = isset($data['parameters'])     ? array_values((array)$data['parameters']) : null;
         $this->autoClose      = isset($data['autoClose'])      ? (bool)$data['autoClose']      : null;
-    }
-
-    public function test() {
-      print("We're using the correct one!");
     }
 }

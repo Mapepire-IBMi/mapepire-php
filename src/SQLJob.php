@@ -203,6 +203,12 @@ class SQLJob
         }
     }
 
+    /**
+     * Create a Query object
+     * @param string $sql - SQL to execute
+     * @param QueryOptions|array|null $options - optional parameter for configuring query behavior
+     * @return Query - Query object
+     */
     public function query(string $sql, QueryOptions|array|null $options = null): Query
     {
         if(is_array($options)) {
@@ -211,11 +217,28 @@ class SQLJob
         return new Query($this, $sql, $options);
     }
 
-    public function queryAndRun(string $sql): string
+    /**
+     * Create and Execute Query
+     * @param string $sql - SQL to execute
+     * @param QueryOptions|array|null $options - optional parameter for configuring query behavior
+     * @param ?int $rows - maximum number of rows to return from query
+     * @return array - Reply from server
+     */
+    public function queryAndRun(string $sql, QueryOptions|array|null $options = null, ?int $rows = null): array
     {
-        return "Function not implemented: queryAndRun()";
+        $query = $this->query($sql, $options);
+
+        try {
+            return $query->run($rows);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Failed to run query:' . $e->getMessage());
+        }
     }
 
+    /** 
+     * Return Job Status
+     * @return JobStatus - the current status of the SQLJob
+     */
     public function getStatus(): JobStatus
     {
         return $this->status;

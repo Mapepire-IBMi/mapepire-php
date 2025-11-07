@@ -10,6 +10,9 @@
 
 namespace Mapepire;
 
+/**
+ * The QueryState tracks the execution state of a query
+ */
 enum QueryState: int
 {
     case NOT_YET_RUN         = 1;
@@ -18,6 +21,9 @@ enum QueryState: int
     case ERROR               = 4;
 }
 
+/**
+ * The Query class handles SQL query execution and result management
+ */
 class Query
 {
     /** @var list<self> */
@@ -33,6 +39,12 @@ class Query
     private int        $rows           = 100;
     private ?string    $correlationId  = null;
 
+    /**
+     * Set up Query object
+     * @param SQLJob $job - A reference to the SQLJob managing the connection
+     * @param string $sql - The SQL query string to execute
+     * @param ?QueryOptions $options - A QueryOptions object controlling execution behavior
+     */
     public function __construct(SQLJob $job, string $sql, ?QueryOptions $options)
     {
         $this->job            = $job;
@@ -47,6 +59,9 @@ class Query
         self::$globalQueryList[] = $this;
     }
 
+    /**
+     * Destroy Query Object
+     */
     public function __destruct()
     {
         // $key = array_search($this, self::$globalQueryList, true);
@@ -61,6 +76,10 @@ class Query
         return $results;
     }
 
+    /**
+     * Prepares and executes a SQL statement with parameters
+     * @return array - server reply
+     */
     public function prepareSqlExecute(): array
     {
         if ($this->state === QueryState::RUN_DONE)
@@ -97,6 +116,13 @@ class Query
         return $results;
     }
 
+    /** Executes the query with optional row count limit. 
+     * Handles different query types (SQL vs. CL command)
+     * Updates query state based on response
+     * Captures correlation ID for future fetch operations
+     * @param ?int $rows - maximum number of rows to return (if SQL)
+     * @return array - server reply
+     */
     public function run(?int $rows = null): array
     {
         if ($rows == null)
@@ -152,6 +178,11 @@ class Query
         return $results;
     }
 
+    /**
+     * Retrieves additional rows when more results are available
+     * @param int $rows maximum number of rows to retrieve
+     * @return array - server reply
+     */
     public function fetchMore(int $rows): array
     {
         if ($rows == null)
@@ -188,6 +219,10 @@ class Query
         return $results;
     }
 
+    /**
+     * Send a close request to the server
+     * @return array - server reply (if any)
+     */
     public function close(): array
     {
         if (!$this->job->getSocket())
@@ -205,11 +240,19 @@ class Query
             $this->state = QueryState::RUN_DONE;
     }
 
+    /**
+     * Retreive the correlation ID of the Query
+     * @return string - correlation ID
+     */
     public function getId(): string
     {
       return $this->correlationId;
     }
 
+    /**
+     * Retreive the current QueryState value
+     * @return QueryState - current QueryState value
+     */
     public function getState(): QueryState
     {
       return $this->state;
