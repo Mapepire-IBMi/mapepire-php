@@ -97,9 +97,13 @@ class SQLJob
             'verify_peer'       => $verify,
             'verify_peer_name'  => $verify,
         ];
-        if ($verify && is_string($server->ca) && $server->ca !== '')
-            $sslContext['cafile'] = $server->ca;
-
+        if ($verify) {
+            if (empty($server->getCa())) {
+                $server->retrieveCertificate();
+            }
+            $sslContext['peer_name'] = $server->host;
+            $sslContext['cafile']    = $server->getCa();
+        }
         $socket->setContext(["ssl" => $sslContext]);
         return $socket;
     }

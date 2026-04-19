@@ -19,7 +19,8 @@ final class DaemonServer
         public readonly string  $password,
         public readonly int     $port = 8076,
         public readonly bool    $ignoreUnauthorized = false,
-        public readonly ?string $ca = null,
+
+        private ?string         $ca = null,
     ) {
         // Basic validation
         if ($this->host === '') {
@@ -38,6 +39,8 @@ final class DaemonServer
             throw new \InvalidArgumentException("CA file is not readable: {$this->ca}");
         }
     }
+
+    public function getCa(): ?string { return $this->ca; }
 
     /**
      * Create a new DaemonServer object from an associative array
@@ -101,5 +104,42 @@ final class DaemonServer
             ignoreUnauthorized: $ignoreUnauthorized,
             ca:                 array_key_exists('CA', $data) ? (string) $data['CA'] : null,
         );
+    }
+
+    /**
+     * Retrieve a certificate from the server for use and store it locally in a temporary file.
+     */
+    public function retrieveCertificate(): void
+    {
+        $context = stream_context_create(['ssl' => [
+            'peer_name'         => $this->host, 
+            'verify_peer'       => false,
+            'verify_peer_name'  => false,
+            'capture_peer_cert' => true,
+        ]]);
+
+        $socket = @stream_socket_client("ssl://{$this->host}:{$this->port}", 
+                                        $errNo, $errStr,
+                                        timeout: 5,
+                                        context: $context);
+        if (!$socket)
+            throw new \RuntimeException("TLS probe failed: $errStr ($errNo)");
+
+        $params = stream_context_get_params($socket);
+        $cert   = $params['options']['ssl']['peer_certificate'] ?? null;
+        fclose($socket);
+
+        if (!$cert || !openssl_x509_export($cert, $ca))
+            throw new \RuntimeException("Failed to capture/export peer certificate.");
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'mapepire-ca');
+        $caPath = $tmpPath . 'pem';
+        @rename($tmpPath, $caPath);
+        if (file_put_contents($caPath, $ca) === false) {
+            @unlink($caPath);
+            throw new \RuntimeException("Failed to write temporary CA file.");
+        }
+        $this->ca = $caPath;
+        register_shutdown_function(function () use ($caPath) { @unlink($caPath); });
     }
 }

@@ -135,7 +135,7 @@ Regardless of connection method, the client performs authentication with informa
 3. password (required) - the password of the user profile
 4. port (optional) - the server port, defaults to 8076
 5. ignoreUnauthorized (optional) - a boolean value determining whether to ignore if a user in unauthorized, defaults to false
-6. ca (optional) - the path to a certificate determining that a user is authorized. If (5) is false, this is required. 
+6. ca (optional) - the path to a certificate determining that a user is authorized. If this is not provided and (5) is false, the client will attempt to retrieve one from the server. 
 
 ## Getting a response
 
